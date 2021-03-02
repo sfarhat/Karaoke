@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 
 # TODO: Get CUDA working
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device
-
 
 def get_libri_speech_dataset(dataset_dir: str, dataset: str="train-clean-100") -> torch.utils.data.Dataset:
 
@@ -26,7 +24,6 @@ def get_libri_speech_dataset(dataset_dir: str, dataset: str="train-clean-100") -
 
     # can use either key or url for "url" parameter of dataset download function
     return torchaudio.datasets.LIBRISPEECH(dataset_dir, url=dataset, download=True)
-
 
 char_map_str = """
  <SPACE> 1
@@ -77,8 +74,6 @@ def text_to_target(text, char_map):
             target.append(char_map[c])
     return torch.Tensor(target)
 
-
-# %%
 def features_from_waveform(waveform):
 
     """
@@ -117,8 +112,6 @@ def preprocess(dataset):
     input_lengths = [] # Time lengths of input features
     target_lengths = [] # Length of target transcripts
 
-    # Each waveform has different lengths of time dimension, so we need to pad them. The built-in fn assumes trailing dimensions of all sequences are the same, so we have to transpose to pad the correct dimension since time dim (dim=1) is different, then transpose back after.
-
     for waveform, _, transcript, _, _, _ in dataset:
         # Output of features_from_waveform have dim: 120 x time
         features = features_from_waveform(waveform).transpose(0, 1)
@@ -129,58 +122,56 @@ def preprocess(dataset):
         targets.append(target)
         target_lengths.append(len(target))
 
-    # Returns dimensions: num_inputs (batch) x time x features, so transpose appropriately
-    # Need to add back (unsqueeze) channel dimension
-    # Side note: this will pad all samples within the same batch (not overall) to be the same dimensions
-    # TODO: Think about how this affects the dimensions of conv -> fc layers
     inputs = nn.utils.rnn.pad_sequence(inputs, batch_first=True).unsqueeze(1).transpose(2, 3) 
 
-    # This will pad with 0, which represents the blank, but this shouldn't be a problem since we're providing the target_length of the unpadded target
     targets = nn.utils.rnn.pad_sequence(targets, batch_first=True)
 
     return inputs, input_lengths, targets, target_lengths
-
-
-def maxout(x):
-    # TODO: Implement this
-    return x
 
 class Conv_Maxout_Layer(nn.Module):
 
     def __init__(self, in_channels, out_channels, kernel=(3,5), pool=False, pool_dim=(3,1), dropout=0.3):
         super(Conv_Maxout_Layer, self).__init__()
 
-        # Use padding so that feature maps don't decrease in size throughout network. Makes things wrt dimensions nice when moving to FC layers.
-        # Math says that we should pad by (1, 2) or equivalently (kernel_size[0]//2, kernel_size[1]//2) to keep dimensions the same
-        # However, Paper says they only pad along frame/time axis, so they assume dimensions of features will decrease? good for temporal nature of output we want, but more math for me! 
-        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel, padding=(0,2))
-        # Using Dropout module vs functional will automatically disable it during model.eval()
+        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel, padding=(0,2))
+        self.conv2 = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel, padding=(0,2))
+        
         self.dropout = nn.Dropout(p=dropout)
+
         self.pool = pool
         self.pool_dim = pool_dim
 
     def forward(self, x):
-        x = self.conv(x)
+        x = self.conv_maxout(x)
         if self.pool:
             x = nn.MaxPool2d(kernel_size=self.pool_dim)(x)
-        x = maxout(x)
-        # doing this after pooling has faster runtime because less operations
         x = self.dropout(x)
         return x
+
+    def conv_maxout(self, x):
+        # 2-way maxout creates 2 versions of a layer and maxes them, that's it
+        
+        x1, x2 = self.conv1(x), self.conv2(x)
+        return torch.max(x1, x2)
 
 class FC_Layer(nn.Module):
 
     def __init__(self, in_dim, out_dim, dropout=0.3):
         super(FC_Layer, self).__init__()
 
-        self.fc = nn.Linear(in_dim, out_dim)
+        self.fc1 = nn.Linear(in_dim, out_dim)
+        self.fc2 = nn.Linear(in_dim, out_dim)
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x):
-        x = self.fc(x)
-        x = maxout(x)
+        x = self.fc_maxout(x)
         x = self.dropout(x)
         return x
+
+    def fc_maxout(self, x):
+        
+        x1, x2 = self.fc1(x), self.fc2(x)
+        return torch.max(x1, x2)
 
 class ASR_1(nn.Module):
 
@@ -188,7 +179,7 @@ class ASR_1(nn.Module):
         Unlike the other layers, the first convolutional layer is followed by a pooling layer, which is described in section 2. The pooling size is 3 × 1, which mean swe only pool over the frequency axis. The filter size is 3 × 5 across the layers. The model has 128 feature maps in the first four convolutional layers and 256 feature maps in the remaining six convolutional layers. Each fully-connected layer has 1024 units. Maxout with 2 piece-wise linear functions is used as the activation function.
         """ 
 
-        def __init__(self, in_dim, out_dim, num_features):
+        def __init__(self, in_dim, num_classes, num_features):
             super(ASR_1, self).__init__()
             self.in_dim = in_dim 
             self.cnn_layers = nn.Sequential(
@@ -204,17 +195,11 @@ class ASR_1(nn.Module):
                             Conv_Maxout_Layer(256, 256),
             )
 
-            # For feature maps, Conv2d layers keep time dimension the same, 3x5 conv decreases frequency dim by 2
-            #                   MaxPool2d layer only along frequency dimension, 3x1 pooling decreases frequency dim by 2
-            # Features dimenions of resulting feature map: num_features - 2 (conv1) - 2 (maxpool) - 2 (conv[2-10]) * 9 = num_features - 22
-            # So in our use case, first fc layer should have dimensions = 256 * (120 - 22) = 25088
-            # TODO: would be nice to automate this math. would require passing in number of certain kinds of layers and their underlying details (not super important)
-
             self.fc_layers = nn.Sequential(
-                            FC_Layer(256 * (num_features - 22), 1024),
+                            FC_Layer(256 * 21, 1024),
                             FC_Layer(1024, 1024),
                             FC_Layer(1024, 1024),
-                            FC_Layer(1024, out_dim, dropout=0)
+                            FC_Layer(1024, num_classes, dropout=0)
             )
 
         def forward(self, x):
@@ -226,18 +211,13 @@ class ASR_1(nn.Module):
             # Input: (N, *, H_{in}) where * means any number of additional dimensions and H_in=in_features
             x = self.fc_layers(x)
 
-
-            # TODO: Add log softmax at end for CTCLoss to work, look into what dimension we should do this over
-            # x = torch.nn.functional.log_softmax(x, dim=?)
+            x = torch.nn.functional.log_softmax(x, dim=2)
             return x
-
 
 def weights_init_unif(module, a, b):
     for p in module.parameters():
         nn.init.uniform_(p.data, a=a, b=b)
 
-
-# %%
 PATH_TO_DATASET_DIR = "/mnt/d/Datasets/"
 
 # def main():
@@ -280,18 +260,17 @@ finetune_optimizer = torch.optim.SGD(net.parameters(), lr=hparams["SGD_lr"], wei
 
 # test(net, test_loader, criterion)
 
-
-# %%
 def train(model, train_dataset, criterion, optimizer):
     model.train()
     for inputs, input_lengths, targets, target_lengths in train_dataset:
 
         optimizer.zero_grad()
 
-        # check what shape this is
+        # this is of shape (batch size, time, num_classes)
         output = model(inputs)
 
         # output passed in should be of shape (time, batch size, num_classes)
+        output = output.transpose(0, 1)
         loss = criterion(output, targets, input_lengths, target_lengths)
         loss.backwards()
 
@@ -308,13 +287,4 @@ def test(model, test_dataset, criterion):
             
             # TODO: Decoding algo
 
-
-# %%
-for inputs, input_lengths, targets, target_lengths in test_loader:
-    net(inputs)
-
-
-# %%
-
-
-
+test(net, test_loader, criterion)
