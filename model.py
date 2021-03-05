@@ -4,13 +4,17 @@ import torch.nn.functional as F
 
 class Conv_Layer(nn.Module):
 
-    def __init__(self, in_channels, out_channels, kernel, activation, dropout, pool=None):
+    def __init__(self, in_channels, out_channels, kernel, activation, dropout, pool=None, stride=1):
         super(Conv_Layer, self).__init__()
 
         # Use padding so that feature maps don't decrease in size throughout network. Makes things wrt dimensions nice when moving to FC layers.
         # Math says that we should pad by (kernel_size[0]//2, kernel_size[1]//2) to keep dimensions the same, in our case this is (1, 2)  
         # However, paper says they only pad along time axis, so number of features will decrease 
-        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel, padding=(0,kernel[1]//2))
+        self.kernel = kernel
+        self.padding = (0, self.kernel[1]//2)
+        self.stride = stride
+
+        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=self.kernel, padding=self.padding, stride=self.stride)
 
         self.maxout = activation == "maxout"
         if activation == "relu":
@@ -48,6 +52,22 @@ class Conv_Layer(nn.Module):
         
         x1, x2 = self.conv(x), self.conv2(x)
         return torch.maximum(x1, x2)
+
+    def get_new_feature_map_dimension(self, in_dim):
+        # Convolution layer + operations will decrease the dimensions of the computed feature maps.
+        # This is important for figuring out the input dimensions of the first FC layer
+        # In our case, we only care about the feature (0th) dimension
+        # out = ((in + 2 * padding - kernel) // stride) + 1
+        # in pooling layer, stride is defaulted to kernel
+
+
+        # For feature maps, Conv2d: 3x5 conv (with appropriate padding) will decrease frequency dim by 2
+        # MaxPool2d: 3x1 pooling decreases frequency dim by 2
+        out = (in_dim + 2 * self.padding[0] - self.kernel[0]) // self.stride + 1
+        if self.pool:
+            out = (out - self.pool[0]) // self.pool[0] + 1
+            
+        return out  
 
 class FC_Layer(nn.Module):
 
@@ -113,15 +133,15 @@ class ASR_1(nn.Module):
                             Conv_Layer(256, 256, (3,5), activation, dropout)
             )
 
-            # For feature maps, Conv2d: 3x5 conv (with appropriate padding) will decrease frequency dim by 2
-            #                   MaxPool2d: 3x1 pooling decreases frequency dim by 2
             # Features dimenion of resulting feature map: num_features = 120 -> 39 (after first conv + pool) - 2 (conv[2-10]) * 9 = 39 - 18 = 21
             # So in our use case, first fc layer should have dimensions = 256 * 21 = 5376
 
-            # TODO: automate this math instead of hard coding the value. would require passing in number of certain kinds of layers and their underlying details (not super important)
+            fc_in = num_features
+            for layer in self.cnn_layers.children():
+                fc_in = layer.get_new_feature_map_dimension(fc_in)
 
             self.fc_layers = nn.Sequential(
-                            FC_Layer(in_dim=256 * 21, out_dim=1024, activation=activation, dropout=dropout),
+                            FC_Layer(in_dim=256 * fc_in, out_dim=1024, activation=activation, dropout=dropout),
                             FC_Layer(1024, 1024, activation, dropout),
                             FC_Layer(1024, 1024, activation, dropout),
                             FC_Layer(1024, num_classes, activation, 0)
@@ -136,3 +156,4 @@ class ASR_1(nn.Module):
 
             x = F.log_softmax(x, dim=2)
             return x
+            

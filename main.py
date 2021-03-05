@@ -37,9 +37,12 @@ def main():
     optimizer = torch.optim.Adam(net.parameters(), lr=hparams["ADAM_lr"])
     finetune_optimizer = torch.optim.SGD(net.parameters(), lr=hparams["SGD_lr"], weight_decay=hparams["SGD_l2_penalty"])
 
-    for epoch in range(1, hparams["epochs"] + 1):
-        train(net, train_loader, criterion, optimizer, epoch, device)
+    # for epoch in range(1, hparams["epochs"] + 1):
+    #     train(net, train_loader, criterion, optimizer, epoch, device)
         
     # TODO: Where/when to do dev set?
 
     test(net, test_loader, criterion, device)
+
+if __name__ == "__main__":
+    main()
