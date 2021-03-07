@@ -35,13 +35,14 @@ char_map_str = """
  """
 
 def create_char_map(char_map_str):
-    char_map = {}
+    char_map, idx_map = {}, {}
     for line in char_map_str.strip().split("\n"):
         c, num = line.split()
         char_map[c] = int(num)
-    return char_map
+        idx_map[int(num)] = c
+    return char_map, idx_map
 
-char_map = create_char_map(char_map_str)
+char_map, idx_map = create_char_map(char_map_str)
 
 def text_to_target(text, char_map):
     target = []
@@ -52,6 +53,16 @@ def text_to_target(text, char_map):
             target.append(char_map[c])
     return torch.Tensor(target)
 
+def target_to_text(target):
+
+    text = ""
+    for idx in target:
+        idx = idx.item()
+        if idx == 1:
+            text += " "
+        else:
+            text += idx_map[idx]
+    return text
 
 def weights_init_unif(module, a, b):
     for p in module.parameters():
