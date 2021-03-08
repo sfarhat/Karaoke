@@ -12,10 +12,11 @@ def test(model, test_loader, criterion, device):
             
             # TODO: Decoding algo
             for log_probs in output:
-                gussed_target = greedy_decode(torch.argmax(log_probs, dim=1))
+                guessed_target = greedy_decode(torch.argmax(log_probs, dim=1))
 
 def greedy_decode(log_probs):
 
+    # TODO: incorporate target_length in here to reduce amount of work necessary
     transcript = []
     blank_seen = False
     prev = None

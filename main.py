@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchaudio
 from config import hparams, DATASET_DIR
 from preprocess import preprocess
-from utils import weights_init_unif
+from utils import weights_init_unif, load_from_checkpoint
 from model import ASR_1
 from training import train
 from inference import test
@@ -41,6 +41,8 @@ def main():
     #     train(net, train_loader, criterion, optimizer, epoch, device)
         
     # TODO: Where/when to do dev set?
+
+    net, _, _, _ = load_from_checkpoint(net, optimizer, "model.pt", device)
 
     test(net, test_loader, criterion, device)
 
