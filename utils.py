@@ -71,7 +71,7 @@ def weights_init_unif(module, a, b):
 
 def load_from_checkpoint(model, optimizer, checkpoint_name, device):
 
-    path = os.join(CHECKPOINT_DIR, checkpoint_name)
+    path = os.path.join(CHECKPOINT_DIR, checkpoint_name)
     checkpoint = torch.load(path, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
