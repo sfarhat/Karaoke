@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from config import CHECKPOINT_DIR
+import os
 
 # TODO: figure out how to modularize this nicely
 char_map_str = """
@@ -70,7 +71,7 @@ def weights_init_unif(module, a, b):
 
 def load_from_checkpoint(model, optimizer, checkpoint_name, device):
 
-    path = CHECKPOINT_DIR + checkpoint_name
+    path = os.join(CHECKPOINT_DIR, checkpoint_name)
     checkpoint = torch.load(path, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -79,12 +80,12 @@ def load_from_checkpoint(model, optimizer, checkpoint_name, device):
 
     return model, optimizer, epoch, loss
 
-def save_checkpoint(model, optimizer, loss, epoch):
+def save_checkpoint(model, optimizer, epoch, activation, batch_size):
 
-    save_path = CHECKPOINT_DIR + "_epoch_" + str(epoch) + ".pt"
+    filename = "activation-{}_batch-size-{}_epoch-{}.pt".format(activation, batch_size, epoch)
+    save_path = CHECKPOINT_DIR + filename 
 
     torch.save({'epoch': epoch,
                 'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'loss': loss,
+                'optimizer_state_dict': optimizer.state_dict()
                 }, save_path)

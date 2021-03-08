@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchaudio
 from config import hparams, DATASET_DIR
 from preprocess import preprocess
-from utils import weights_init_unif, load_from_checkpoint
+from utils import weights_init_unif, load_from_checkpoint, save_checkpoint
 from model import ASR_1
 from training import train
 from inference import test
@@ -26,7 +26,7 @@ def main():
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=hparams["batch_size"], shuffle=False, collate_fn=preprocess, pin_memory=use_cuda)
 
     # 1 channel input from feature spectrogram, 29 dim output from char_map + blank for CTC, 120 features
-    net = ASR_1(in_dim=1, num_classes=29, num_features=120, activation="relu", dropout=0.3)
+    net = ASR_1(in_dim=1, num_classes=29, num_features=120, activation=hparams["activation"], dropout=0.3)
     net.to(device)
     weights_init_unif(net, hparams["weights_init_a"], hparams["weights_init_b"])
 
@@ -37,12 +37,14 @@ def main():
     optimizer = torch.optim.Adam(net.parameters(), lr=hparams["ADAM_lr"])
     finetune_optimizer = torch.optim.SGD(net.parameters(), lr=hparams["SGD_lr"], weight_decay=hparams["SGD_l2_penalty"])
 
-    # for epoch in range(1, hparams["epochs"] + 1):
-    #     train(net, train_loader, criterion, optimizer, epoch, device)
+    for epoch in range(1, hparams["epochs"] + 1):
+        train(net, train_loader, criterion, optimizer, epoch, device)
+        save_checkpoint(net, optimizer, epoch, hparams["activation"], hparams["batch_size"])
+    
         
     # TODO: Where/when to do dev set?
 
-    net, _, _, _ = load_from_checkpoint(net, optimizer, "model.pt", device)
+    net, _, _, _ = load_from_checkpoint(net, optimizer, "activation-relu_batch-size-3_epoch-3.pt", device)
 
     test(net, test_loader, criterion, device)
 

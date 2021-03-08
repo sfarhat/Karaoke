@@ -1,5 +1,5 @@
 DATASET_DIR = "/mnt/d/Datasets/"
-CHECKPOINT_DIR = "./"
+CHECKPOINT_DIR = "./checkpoints"
 
 hparams = {
     "ADAM_lr": 10e-4,
@@ -8,5 +8,6 @@ hparams = {
     "SGD_l2_penalty": 1e-5,
     "weights_init_a": -0.05,
     "weights_init_b": 0.05,
-    "epochs": 10
+    "epochs": 10,
+    "activation": "relu"
 }

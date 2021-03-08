@@ -25,10 +25,3 @@ def train(model, train_loader, criterion, optimizer, epoch, device):
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, batch_num * len(inputs), data_len,
                     100. * batch_num / len(train_loader), loss.item()))
-
-    save_checkpoint(model, optimizer, loss, epoch)
-        
-
-        
-
-        
