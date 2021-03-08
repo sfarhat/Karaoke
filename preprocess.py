@@ -19,7 +19,7 @@ def features_from_waveform(waveform):
     data = waveform.squeeze(dim=0)
 
     # Grab desired features
-    mfcc_features = torchaudio.transforms.MFCC(log_mels=True)(data), # Takes in audio of dimension (..., time) returns (..., n_mfcc, time) where n_mfcc defaults to 40
+    mfcc_features = torchaudio.transforms.MFCC(log_mels=True)(data) # Takes in audio of dimension (..., time) returns (..., n_mfcc, time) where n_mfcc defaults to 40
     deltas = torchaudio.functional.compute_deltas(mfcc_features)
     delta_deltas = torchaudio.functional.compute_deltas(deltas)
 
