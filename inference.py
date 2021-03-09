@@ -16,13 +16,13 @@ def test(model, test_loader, criterion, device):
             for log_probs in output:
                 guessed_target = greedy_decode(torch.argmax(log_probs, dim=1))
 
-def greedy_decode(log_probs):
+def greedy_decode(char_indices):
 
     # TODO: incorporate target_length in here to reduce amount of work necessary
     transcript = []
     blank_seen = False
     prev = None
-    for i in log_probs:
+    for i in char_indices:
         if i == prev and not blank_seen:
            continue
         elif i == 0:
