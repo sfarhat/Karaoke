@@ -120,6 +120,10 @@ class ASR_1(nn.Module):
             
             super(ASR_1, self).__init__()
 
+            # Interesting note: the size of the weight tensors are (out_channels, in_channels, kernel[0], kernel[1])
+            # Understanding why this is different from the conv output shape of (batch_size, out_channels, height, width)
+            # is a good exercise for understanding how CNNs work
+
             self.cnn_layers = nn.Sequential(
                             Conv_Layer(in_channels=in_dim, out_channels=128, kernel=(3,5), activation="relu", dropout=0, pool=(3,1)),
                             Conv_Layer(128, 128, (3,5), activation, dropout),
@@ -149,6 +153,7 @@ class ASR_1(nn.Module):
 
         def forward(self, x):
             x = self.cnn_layers(x) # output shape (batch_size, channels, features, time)
+            # currently, this output is all 0s, which is AWESOME /s
             x = x.view(x.shape[0], x.shape[1] * x.shape[2], x.shape[3]) # flattens channel and feature dimensions into one
             x = x.transpose(1, 2) # (batch_size, time, flattened_features)
 
