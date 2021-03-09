@@ -7,10 +7,12 @@ def test(model, test_loader, criterion, device):
         for inputs, input_lengths, targets, target_lengths in test_loader:
 
             output = model(inputs)
-
+            output = output.transpose(0, 1)
             loss = criterion(output, targets, input_lengths, target_lengths)
             
             # TODO: Decoding algo
+            # Transpose back so that we can iterate over batch dimension
+            output = output.transpose(0, 1)
             for log_probs in output:
                 guessed_target = greedy_decode(torch.argmax(log_probs, dim=1))
 

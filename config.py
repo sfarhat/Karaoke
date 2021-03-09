@@ -1,4 +1,4 @@
-DATASET_DIR = "/mnt/d/Datasets/"
+DATASET_DIR = "/mnt/d/Datasets"
 CHECKPOINT_DIR = "./checkpoints"
 
 hparams = {
