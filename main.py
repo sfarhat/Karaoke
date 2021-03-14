@@ -7,6 +7,8 @@ from utils import weights_init_unif, load_from_checkpoint, save_checkpoint
 from model import ASR_1
 from training import train
 from inference import test
+import matplotlib.pyplot as plt
+import numpy as np
 
 def main():
     
@@ -15,13 +17,13 @@ def main():
     device = torch.device("cuda" if use_cuda else "cpu")
     print(device)
 
-    train_dataset = torchaudio.datasets.LIBRISPEECH(DATASET_DIR, url="train-clean-100", download=True)
-    dev_dataset = torchaudio.datasets.LIBRISPEECH(DATASET_DIR, url="dev-clean", download=True)
+    # train_dataset = torchaudio.datasets.LIBRISPEECH(DATASET_DIR, url="train-clean-100", download=True)
+    # dev_dataset = torchaudio.datasets.LIBRISPEECH(DATASET_DIR, url="dev-clean", download=True)
     test_dataset = torchaudio.datasets.LIBRISPEECH(DATASET_DIR, url="test-clean", download=True)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=hparams["batch_size"], shuffle=True, collate_fn=preprocess, pin_memory=use_cuda)
+    # train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=hparams["batch_size"], shuffle=True, collate_fn=preprocess, pin_memory=use_cuda)
 
-    dev_loader = torch.utils.data.DataLoader(dev_dataset, batch_size=hparams["batch_size"], shuffle=True, collate_fn=preprocess, pin_memory=use_cuda)
+    # dev_loader = torch.utils.data.DataLoader(dev_dataset, batch_size=hparams["batch_size"], shuffle=True, collate_fn=preprocess, pin_memory=use_cuda)
 
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=hparams["batch_size"], shuffle=False, collate_fn=preprocess, pin_memory=use_cuda)
 
@@ -37,16 +39,24 @@ def main():
     optimizer = torch.optim.Adam(net.parameters(), lr=hparams["ADAM_lr"])
     finetune_optimizer = torch.optim.SGD(net.parameters(), lr=hparams["SGD_lr"], weight_decay=hparams["SGD_l2_penalty"])
 
-    for epoch in range(1, hparams["epochs"] + 1):
-        train(net, train_loader, criterion, optimizer, epoch, device)
-        save_checkpoint(net, optimizer, epoch, hparams["activation"], hparams["batch_size"])
+    # for epoch in range(1, hparams["epochs"] + 1):
+    #     train(net, train_loader, criterion, optimizer, epoch, device)
+    #     save_checkpoint(net, optimizer, epoch, hparams["activation"], hparams["batch_size"])
     
         
     # TODO: Where/when to do dev set?
 
-    net, _, _, _ = load_from_checkpoint(net, optimizer, "activation-relu_batch-size-3_epoch-3.pt", device)
+    # net, _, _, _ = load_from_checkpoint(net, optimizer, "activation-relu_batch-size-3_epoch-3.pt", device)
+
+    # pass
+    # filter_list = list(net.children())[0][0].conv.weight.data
+    # im = filter_list[0]
+    # im = np.transpose(im, (1,2,0))
+    # plt.imshow(im)
+    # plt.show()
 
     test(net, test_loader, criterion, device)
+    
 
 if __name__ == "__main__":
     main()
