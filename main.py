@@ -12,7 +12,6 @@ import numpy as np
 
 def main():
     
-    # todo: get cuda working
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
     print(device)
