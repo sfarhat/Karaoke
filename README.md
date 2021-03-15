@@ -27,3 +27,12 @@ Using CNNs for audio is a weird choice honestly though. The standard is to use s
 At the heart of these recurrent models is the concept of **attention**, which literally tells the network at what point in the sequential input it should look to process the next step in the output. (tbh this seems like it should be related to activation maps being the analogue to attention in a CNN? look into this). LAS has a very straightforward attention mechanism built-in which gives us exactly what we want.
 
 Is this a new idea? No. I am re-building the wheel here. Will it be fun? Maybe, but I don't have a server of GPUs to train it on, so maybe finding a pre-trained model would be nice. Will it be a good learning experience? Absolutely.
+
+## Progress
+
+As of 3/15, the appropriate ASR CNN is implmented with CUDA functionality, but it only learns to output the blank label. This is probably due to not having been trained long enough. While I would, there are 2 outstanding issues:
+
+* The loss clips to NaN. When using maxout, this occurs within the 1st epoch, whereas with PReLU, this occured during the 7th epoch. Training must be stopped then.
+* My single RTX 2060 isn't capable of doing the full batchsize of 20 as cited in the paper, so instead I used 3.
+
+Both of these can be remedied by more compute, so progress is stalled until then and a pretrained network is probably a good step from here.

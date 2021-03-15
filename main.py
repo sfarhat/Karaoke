@@ -42,13 +42,13 @@ def main():
     writer = SummaryWriter()
     # writer.add_graph(net)
 
-    for epoch in range(hparams["epochs"]):
-        train(net, train_loader, criterion, optimizer, epoch, device, writer)
-        save_checkpoint(net, optimizer, epoch, hparams["activation"], hparams["batch_size"])
+    # for epoch in range(hparams["epochs"]):
+        # train(net, train_loader, criterion, optimizer, epoch, device, writer)
+        # save_checkpoint(net, optimizer, epoch, hparams["activation"], hparams["batch_size"])
     
     # TODO: Where/when to do dev set?
 
-    # net, _, _, _ = load_from_checkpoint(net, optimizer, "activation-relu_batch-size-3_epoch-3.pt", device)
+    net, _, _ = load_from_checkpoint(net, optimizer, "activation-prelu_batch-size-3_epoch-5.pt", device)
 
     # pass
     # filter_list = list(net.children())[0][0].conv.weight.data

@@ -6,6 +6,7 @@ def test(model, test_loader, criterion, device):
     with torch.no_grad():
         for inputs, input_lengths, targets, target_lengths in test_loader:
 
+            inputs, targets = inputs.to(device), targets.to(device)
             output = model(inputs)
             output = output.transpose(0, 1)
             loss = criterion(output, targets, input_lengths, target_lengths)

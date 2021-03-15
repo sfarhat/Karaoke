@@ -79,14 +79,12 @@ def load_from_checkpoint(model, optimizer, checkpoint_name, device):
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     epoch = checkpoint['epoch']
-    loss = checkpoint['loss']
-
-    return model, optimizer, epoch, loss
+    return model, optimizer, epoch
 
 def save_checkpoint(model, optimizer, epoch, activation, batch_size):
 
     filename = "activation-{}_batch-size-{}_epoch-{}.pt".format(activation, batch_size, epoch)
-    save_path = CHECKPOINT_DIR + filename 
+    save_path = os.path.join(CHECKPOINT_DIR, filename)
 
     torch.save({'epoch': epoch,
                 'model_state_dict': model.state_dict(),

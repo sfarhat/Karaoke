@@ -22,7 +22,7 @@ def train(model, train_loader, criterion, optimizer, epoch, device, writer):
         optimizer.step() 
 
         if batch_num % 100 == 0 or batch_num == data_len:
-            writer.add_scalar("Loss/train", loss.item(), epoch * data_len + batch_num)
+            writer.add_scalar("Loss/train", loss.item(), epoch * data_len + batch_num * len(inputs))
             writer.flush()     
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_num * len(inputs), data_len,

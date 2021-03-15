@@ -153,7 +153,6 @@ class ASR_1(nn.Module):
 
         def forward(self, x):
             x = self.cnn_layers(x) # output shape (batch_size, channels, features, time)
-            # currently, this output is all 0s, which is AWESOME /s
             x = x.view(x.shape[0], x.shape[1] * x.shape[2], x.shape[3]) # flattens channel and feature dimensions into one
             x = x.transpose(1, 2) # (batch_size, time, flattened_features)
 
