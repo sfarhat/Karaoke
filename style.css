@@ -1,0 +1,20 @@
+#lyrics {
+    font-family: Programme, Arial, sans-serif;
+    font-weight: 100;
+}
+
+@font-face {
+    font-family: 'Programme';
+    src: url(https://assets.genius.com/fonts/programme_normal.woff2?1615497096) format('woff2'),
+      url(https://assets.genius.com/fonts/programme_normal.woff?1615497096) format('woff');
+    font-style: normal;
+    font-weight: normal;
+  }  
+
+@font-face {
+    font-family: 'Programme';
+    src: url(https://assets.genius.com/fonts/programme_light.woff2?1615497096) format('woff2'),
+      url(https://assets.genius.com/fonts/programme_light.woff?1615497096) format('woff');
+    font-style: normal;
+    font-weight: 100;
+  }
