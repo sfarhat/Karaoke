@@ -6,11 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Check the Rhyme</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="./script.js"></script>
 </head>
 <body>
-    <p>Form with input for name of song</p>
     <form>
         <fieldset>
             <legend>Lyric Lookup</legend>
@@ -24,8 +23,11 @@
     </form>
     <br>
     <br>
+    <p>Audio of song. Obtained from youtube?</p>
+    <audio controls id="audio">
+        <source src="song.wav" type="audio/wav">
+    </audio>
     <p>Lyrics of song:</p>
     <div id="lyrics"></div>
-    <p>Audio of song. Obtained from youtube?</p> 
 </body>
 </html>
