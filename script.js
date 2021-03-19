@@ -39,14 +39,16 @@ $(document).ready(() => {
         });
     };
 
+    let currWord;
     function highlightWord(words) {
-        let t = audio.currentTime; // currently undefined
-        console.log(t);
-        let shouldBeHighlighted = words.filter(word => (word.start <= t && word.end >= t));
-        if (shouldBeHighlighted.length > 0) {
-            console.log(shouldBeHighlighted);
-        } 
-
+        let t = audio[0].currentTime; // index becuase multiple sources
+        // Should only be one word that fits within timestamps
+        let shouldBeHighlighted = words.filter(word => (word.start <= t && word.end >= t))[0];
+        if (shouldBeHighlighted && shouldBeHighlighted != currWord) {
+            currWord = shouldBeHighlighted;
+            console.log(currWord)
+            shouldBeHighlighted.elem.classList.add("highlighted");
+        }
         window.requestAnimationFrame(() => {
             highlightWord(words);
         });
