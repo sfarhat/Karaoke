@@ -14,20 +14,34 @@ $(document).ready(() => {
 
         let currOffset = 0;
         words.forEach(word => {
+            let elem;
+            word.break = false;
             if (word.startOffset > currOffset) {
                 // There is a newline or space
                 let whitespace = transcript.slice(currOffset, word.startOffset);
                 if (whitespace === "\r\n" || whitespace === "\r\n\r\n") {
-                    $("#lyrics").append("<br>");
+                    // To allow for showing each line, rather than entire lyrics,
+                    // we add 'break' attribute to word after each <br>
+                    elem = document.createElement("br");
+                    word.break = true;
+                    $("#lyrics").append(elem);
                 } else {
                     $("#lyrics").append(whitespace);
+                    // Don't worry about this for now since it messes with punctutaion.
                 }
             }
 
+            // if (word.startOffset === 0) {
+            //     // Edge case for very first word, add break for showLine to work properly
+            //     word.break = true;
+            // }
+
             // Want to access these elements from list in animation function
+            // Maybe slice until next space instead of endOffset to account for punctuation
             let text = document.createTextNode(transcript.slice(word.startOffset, word.endOffset));
-            let elem = document.createElement("span");
+            elem = document.createElement("span");
             elem.appendChild(text);
+            elem.classList.add("hidden");
             $("#lyrics").append(elem);
             word.elem = elem;
 
@@ -39,24 +53,71 @@ $(document).ready(() => {
         });
     };
 
-    let currWord;
-    function highlightWord(words) {
-        let t = audio[0].currentTime; // index becuase multiple sources
-        // Should only be one word that fits within timestamps
-        let shouldBeHighlighted = words.filter(word => (word.start <= t && word.end >= t))[0];
-        if (shouldBeHighlighted && shouldBeHighlighted != currWord) {
-            currWord = shouldBeHighlighted;
-            console.log(currWord)
-            shouldBeHighlighted.elem.classList.add("highlighted");
+    let currShownWords = [];
+    function showLine(words, highlightIndex) {
+        // If first word in line, will add whole line, else should do nothing
+        // Add back 'hidden' property from previously shown line
+        currShownWords.forEach(word => {
+            word.elem.classList.add("hidden");
+        })
+
+        // Clear shown words array to make room for new line
+        currShownWords = [words[highlightIndex]];
+
+        // Gather words until EOL 
+        let right = highlightIndex + 1;
+        while (!words[right].break) {
+            currShownWords.push(words[right]);
+            right++;
         }
+
+        console.log("trying to show line");
+        console.log(currShownWords);
+        currShownWords.forEach(word => {
+            word.elem.classList.remove("hidden");
+        })
+    }
+    
+    let currHighlightedWord;
+    let lineShown = false;
+    function highlightWord(words) {
+
+        let t = audio[0].currentTime; // index becuase multiple sources
+        // Get index for highlighting and position for to help w/ showing line
+        let highlightIndex = words.findIndex(word => (word.start <= t && word.end >= t));
+        let highlightedWord = words[highlightIndex];
+
+        if (highlightIndex != -1) {
+            // Audio has started, so highlightedWord should be defined
+            if (!lineShown) {
+                if (highlightIndex === 0 || highlightedWord.break) {
+                    // reached new line (has .break === true)
+                    console.log(highlightIndex);
+                    showLine(words, highlightIndex);
+                    lineShown = true;
+                }
+            }
+
+            if (highlightedWord != currHighlightedWord) {
+                if (highlightedWord.break) {
+                    // reached new line
+                    // accounts for first word edge case (currHighLightedWord undefined)
+                    lineShown = false;
+                }
+                currHighlightedWord = highlightedWord;
+                console.log(currHighlightedWord)
+                highlightedWord.elem.classList.add("highlighted");
+            }
+        }
+
         window.requestAnimationFrame(() => {
             highlightWord(words);
         });
     };
 
     $("#submit").click(() => {
-        songName = $("#song_name").val();
-        console.log(songName);
+        songname = $("#song_name").val();
+        console.log(songname);
         audio.show();
         // $("#lyrics").load(lyricsUrl);
         $.getJSON("align.json", processAlignment); 
