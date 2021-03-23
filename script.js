@@ -31,10 +31,10 @@ $(document).ready(() => {
                 }
             }
 
-            // if (word.startOffset === 0) {
-            //     // Edge case for very first word, add break for showLine to work properly
-            //     word.break = true;
-            // }
+            if (word.startOffset === 0) {
+                // Edge case for very first word, add break for showLine to work properly
+                word.break = true;
+            }
 
             // Want to access these elements from list in animation function
             // Maybe slice until next space instead of endOffset to account for punctuation
@@ -71,15 +71,12 @@ $(document).ready(() => {
             right++;
         }
 
-        console.log("trying to show line");
-        console.log(currShownWords);
         currShownWords.forEach(word => {
             word.elem.classList.remove("hidden");
         })
     }
     
     let currHighlightedWord;
-    let lineShown = false;
     function highlightWord(words) {
 
         let t = audio[0].currentTime; // index becuase multiple sources
@@ -89,23 +86,14 @@ $(document).ready(() => {
 
         if (highlightIndex != -1) {
             // Audio has started, so highlightedWord should be defined
-            if (!lineShown) {
-                if (highlightIndex === 0 || highlightedWord.break) {
-                    // reached new line (has .break === true)
-                    console.log(highlightIndex);
-                    showLine(words, highlightIndex);
-                    lineShown = true;
-                }
-            }
-
             if (highlightedWord != currHighlightedWord) {
                 if (highlightedWord.break) {
                     // reached new line
-                    // accounts for first word edge case (currHighLightedWord undefined)
-                    lineShown = false;
+                    console.log("Showing line beginning with word: " + highlightedWord.word);
+                    showLine(words, highlightIndex);
                 }
                 currHighlightedWord = highlightedWord;
-                console.log(currHighlightedWord)
+                console.log(currHighlightedWord);
                 highlightedWord.elem.classList.add("highlighted");
             }
         }
