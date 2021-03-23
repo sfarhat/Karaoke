@@ -13,9 +13,16 @@
     <form>
         <fieldset>
             <legend>Lyric Lookup</legend>
-            <label for="song_name">Song name:</label>
+            <label for="song-name">Song name:</label>
             <br>
-            <input type="text" id="song_name" name="song_name" placeholder="Song Name">
+            <input type="text" id="song-name" name="song-name" placeholder="Song Name">
+            <br>
+            <br>
+            <input type="checkbox" id="line-by-line" name="line-by-line">
+            <label for="line-by-line">Show lyrics line-by-line</label>
+            <br>
+            <input type="checkbox" id="animate-highlight" name="animate-highlight">
+            <label for="animate-highlight">Animated highlighting of lyrics</label>
             <br>
             <br>
             <input type="button" id="submit" value="Search">
