@@ -155,6 +155,19 @@ $(document).ready(() => {
             word.elem.classList.remove("hidden");
         })
     }
+
+    function scrollToLine(words, highlightIndex) {
+
+        let scrolledTo = words[highlightIndex];
+
+        scrolledTo.elem.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "center"
+        });
+
+
+    }
     
     let currHighlightedWord;
     let highlightDuration;
@@ -169,10 +182,15 @@ $(document).ready(() => {
             // Audio has started, so highlightedWord should be defined
             if (highlightedWord !== currHighlightedWord) {
                 // If first word in line, will add whole line, else should do nothing
-                if (highlightedWord.break && lineByLine) {
+                if (highlightedWord.break) {
                     // reached new line
-                    console.log("Showing line beginning with word: " + highlightedWord.word);
-                    showLine(words, highlightIndex);
+                    if(lineByLine) {
+                        console.log("Showing line beginning with word: " + highlightedWord.word);
+                        showLine(words, highlightIndex);
+                    } else {
+                        console.log("Scrolling to line beginning with word: " + highlightedWord.word);
+                        scrollToLine(words, highlightIndex);
+                    }
                 }
 
                 highlightedWord.elem.classList.add("highlight");

@@ -21,6 +21,12 @@
     text-align: center;
 }
 
+#audio {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
 @font-face {
     font-family: 'Programme';
     src: url(https://assets.genius.com/fonts/programme_normal.woff2?1615497096) format('woff2'),
