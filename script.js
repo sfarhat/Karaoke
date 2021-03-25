@@ -4,45 +4,84 @@ $(document).ready(() => {
     let audio = $("#audio");
     audio.hide();
 
+
+    function extractWord(transcript, word, currOffset) {
+        // punctuation -> space/newline -> punctuation -> word -> punctuation -> space/newline
+        // Example: asdf[? (a) ]asdf
+        
+        // Returns word including attached punctuation, 
+        // while also adding first space/newline to DOM
+
+        // This can probably be done with a regex expression but I don't wanna do that now
+
+        // + 2 necessary to account for added "\r\n" at beginning
+        // But for first word (offset = 0), +2 would skip over these characters, messing things up
+        let i = currOffset === 0 ? currOffset : currOffset + 2;
+
+        // First puncutation should be handled by call for previous word
+        // So, move past it to reach first whitespace
+        while (!(transcript[i] === " " || transcript[i] === "\n" || transcript[i] === "\r")) {
+            i++
+        }
+
+        // Extract first whitespace
+        let whitespace = "";
+        while (transcript[i] === " " || transcript[i] === "\n" || transcript[i] === "\r") {
+            whitespace += transcript[i];
+            i++
+        }
+
+        // Process whitespace
+        if (whitespace.includes("\n")) {
+            // To allow for showing each line, rather than entire lyrics,
+            // we add 'break' attribute to word after each newline character 
+            // For nicer visuals, we don't add actual <br> to DOM but still use the 
+            // conceptual "break" attribute to differentiate lines
+            word.break = true;
+            if (!lineByLine) {
+                $("#lyrics").append(document.createElement("br"));
+            }
+        } 
+       
+        // Get rid of newlines and add space(s)
+        $("#lyrics").append(whitespace.replace(/\r?\n|\r/g, ""));
+    
+        // Get puncutation + word + punctation 
+        let text = ""; 
+        while (i < transcript.length && 
+            !(transcript[i] === " " || transcript[i] === "\n" || transcript[i] === "\r")) {
+            text += transcript[i];
+            i++;
+        }
+
+        return document.createTextNode(text);
+    }
+
     function processAlignment(alignJSON) {
 
         console.log(alignJSON);
 
         let transcript = alignJSON.transcript;
+        // This is an important edge case, makes handling first line not any different
+        transcript = "\r\n" + transcript;
         let words = alignJSON.words;
         // console.log(JSON.stringify(transcript));
 
         let currOffset = 0;
-        words.forEach(word => {
+        let prevEnd = 0;
+        let nextStart = 0;
+        words.forEach((word, i) => {
             let elem;
             word.break = false;
-            if (word.startOffset > currOffset) {
-                // There is a newline or space
-                let whitespace = transcript.slice(currOffset, word.startOffset);
-                if (whitespace === "\r\n" || whitespace === "\r\n\r\n") {
-                    // To allow for showing each line, rather than entire lyrics,
-                    // we add 'break' attribute to word after each <br>
-                    // For nicer visuals, we don't add actual <br> but still use the 
-                    // conceptual "break" attribute to differentiate lines
-                    word.break = true;
-                    if (!lineByLine) {
-                        elem = document.createElement("br");
-                    }
-                    $("#lyrics").append(elem);
-                } else {
-                    $("#lyrics").append(whitespace);
-                    // TODO: Figure out punctutaion.
-                }
-            }
 
-            if (word.startOffset === 0) {
-                // Edge case for very first word, add break for showLine to work properly
-                word.break = true;
-            }
+            // if (word.startOffset === 0) {
+            //     // Edge case for very first word, add break for showLine to work properly
+            //     // Alternate solution: could add "sentinel" empty line at begining of transcript
+            //     word.break = true;
+            // }
 
             // Want to access these elements from list in animation function
-            // Maybe slice until next space instead of endOffset to account for punctuation
-            let text = document.createTextNode(transcript.slice(word.startOffset, word.endOffset));
+            let text = extractWord(transcript, word, currOffset);
             elem = document.createElement("span");
             elem.appendChild(text);
             if (lineByLine) {
@@ -53,6 +92,22 @@ $(document).ready(() => {
             word.elem = elem;
 
             currOffset = word.endOffset;
+
+            if (word.case === "not-found-in-audio") {
+                // Handles edge case of "unfound" words not having start
+                // or end times. This will just show the entire "unfound"
+                // chunk for the unmatched times of the audio
+                word.start = prevEnd;
+                word.end = nextStart;
+            }
+
+            prevEnd = word.end;
+            let j = i
+            while (words[j].case === "not-found-in-audio") {
+                j++;
+            }
+            nextStart = words[j].start;
+
             });
         
         window.requestAnimationFrame(() => {
@@ -62,8 +117,7 @@ $(document).ready(() => {
 
     let currShownWords = [];
     function showLine(words, highlightIndex) {
-        // If first word in line, will add whole line, else should do nothing
-        // Add back 'hidden' property from previously shown line
+        // Hide previously shown line
         currShownWords.forEach(word => {
             word.elem.classList.add("hidden");
         })
@@ -78,13 +132,14 @@ $(document).ready(() => {
             right++;
         }
 
+        // Show words in line
         currShownWords.forEach(word => {
             word.elem.classList.remove("hidden");
         })
     }
     
     let currHighlightedWord;
-    let highLightDuration;
+    let highlightDuration;
     function highlightWord(words) {
 
         let t = audio[0].currentTime; // index becuase multiple sources
@@ -92,21 +147,25 @@ $(document).ready(() => {
         let highlightIndex = words.findIndex(word => (word.start <= t && word.end >= t));
         let highlightedWord = words[highlightIndex];
 
-        if (highlightIndex != -1) {
+        if (highlightIndex !== -1) {
             // Audio has started, so highlightedWord should be defined
-            if (highlightedWord != currHighlightedWord) {
+            if (highlightedWord !== currHighlightedWord) {
+                // If first word in line, will add whole line, else should do nothing
                 if (highlightedWord.break && lineByLine) {
                     // reached new line
                     console.log("Showing line beginning with word: " + highlightedWord.word);
                     showLine(words, highlightIndex);
                 }
-                currHighlightedWord = highlightedWord;
-                console.log(currHighlightedWord);
+
                 highlightedWord.elem.classList.add("highlight");
+
                 highlightDuration = animateHighlight ? highlightedWord.end - highlightedWord.start : 0;
                 highlightedWord.elem.style.transitionDuration = highlightDuration + "s";
+
+                currHighlightedWord = highlightedWord;
+                console.log(currHighlightedWord);
             }
-        }
+        } 
 
         window.requestAnimationFrame(() => {
             highlightWord(words);
