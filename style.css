@@ -6,7 +6,7 @@
   /* Credits to: https://stackoverflow.com/questions/17212094/fill-background-color-left-to-right-css
   for making the animated highlighting work */
   background: linear-gradient(to left, white 50%, yellow 50%) right;
-  background-size: 200%;
+  background-size: 300%;
   transition: background-position linear;
 }
 

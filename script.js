@@ -68,17 +68,9 @@ $(document).ready(() => {
         // console.log(JSON.stringify(transcript));
 
         let currOffset = 0;
-        let prevEnd = 0;
-        let nextStart = 0;
         words.forEach((word, i) => {
             let elem;
             word.break = false;
-
-            // if (word.startOffset === 0) {
-            //     // Edge case for very first word, add break for showLine to work properly
-            //     // Alternate solution: could add "sentinel" empty line at begining of transcript
-            //     word.break = true;
-            // }
 
             // Want to access these elements from list in animation function
             let text = extractWord(transcript, word, currOffset);
@@ -93,23 +85,49 @@ $(document).ready(() => {
 
             currOffset = word.endOffset;
 
-            if (word.case === "not-found-in-audio") {
-                // Handles edge case of "unfound" words not having start
-                // or end times. This will just show the entire "unfound"
-                // chunk for the unmatched times of the audio
-                word.start = prevEnd;
-                word.end = nextStart;
-            }
+            // Problematic edge cases have to do with start and end timings
+            // <unk> words don't pose problems as they have well-defined start and end times
+            // Note: weird edge case where successful word has 0 length (start === end), no fix for now
+            if (word.case === "not-found-in-audio")  {
+                // Handles edge case of "unfound" words having undefined start and end times
+                // Will take end time of previous "found" word and start time of next "success" word
+                // Divide this period of time equally among all "unfound" word between these
 
-            prevEnd = word.end;
-            let j = i
-            while (words[j].case === "not-found-in-audio") {
-                j++;
-            }
-            nextStart = words[j].start;
+                // console.log(word)
+
+                let numUnsuccessful = 1;
+                let indexWithinUnsuccessful = 0;
+
+                // Look to the right without hitting end of transcript
+                let right = i + 1;
+                while (right < words.length && words[right].case === "not-found-in-audio") {
+
+                    numUnsuccessful++;
+                    right++;
+                }
+
+                // Edge case for reaching past last word in transcript
+                let nextStart = right === words.length ? audio.duration : words[right].start;
+
+                // Look to the left without hitting beginning of transcript
+                let left = i - 1;
+                while (left > -1 && words[left].case === "not-found-in-audio") {
+
+                    numUnsuccessful++;
+                    indexWithinUnsuccessful++;
+                    left--;
+                }
+
+                // Edge case for reaching before first word in transcript
+                let prevEnd = left === -1 ? 0 : words[left].end;
+
+                let duration = (nextStart - prevEnd) / numUnsuccessful;
+                word.start = prevEnd + (duration * indexWithinUnsuccessful);
+                word.end = prevEnd + (duration * (indexWithinUnsuccessful + 1));
+            } 
 
             });
-        
+
         window.requestAnimationFrame(() => {
             highlightWord(words);
         });
@@ -146,7 +164,7 @@ $(document).ready(() => {
         // Get index for highlighting and position for to help w/ showing line
         let highlightIndex = words.findIndex(word => (word.start <= t && word.end >= t));
         let highlightedWord = words[highlightIndex];
-
+    
         if (highlightIndex !== -1) {
             // Audio has started, so highlightedWord should be defined
             if (highlightedWord !== currHighlightedWord) {
@@ -165,7 +183,8 @@ $(document).ready(() => {
                 currHighlightedWord = highlightedWord;
                 console.log(currHighlightedWord);
             }
-        } 
+        }
+        
 
         window.requestAnimationFrame(() => {
             highlightWord(words);
