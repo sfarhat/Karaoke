@@ -24,7 +24,9 @@
 #audio {
   position: fixed;
   top: 0;
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  padding-top: 10%;
 }
 
 @font-face {

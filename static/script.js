@@ -1,6 +1,5 @@
 $(document).ready(() => {
-    let songName, animateHighlight, lineByLine;
-    const lyricsUrl = "lyrics.txt";
+    let songName, artistName, animateHighlight, lineByLine;
     let audio = $("#audio");
     audio.hide();
 
@@ -212,12 +211,42 @@ $(document).ready(() => {
     $("#submit").click(() => {
         // TODO: add boolean check if song has already loaded to prevent duplicates
         // check console to see what this means
-        songname = $("#song-name").val();
+        songName = $("#song-name").val();
+        artistName = $("#artist-name").val();
         animateHighlight = $("#animate-highlight").is(":checked");
         lineByLine = $("#line-by-line").is(":checked");
-        console.log(songname);
-        audio.show();
-        // $("#lyrics").load(lyricsUrl);
-        $.getJSON("align.json", processAlignment); 
+
+        // audio.show();
+
+        let lyricsURL = "/lyrics"
+        let lyricsParams = new URLSearchParams();
+
+        lyricsParams.set("song-name", songName);
+        lyricsParams.set("artist-name", artistName);
+
+        // Using POST
+        // fetch(lyricsURL, {
+
+        //     headers: {
+        //         "Content-Type": "application/json"
+        //     },
+        //     method: "POST",
+        //     body: JSON.stringify(lyricsParams)
+        // }).then(response => {
+        //     return response.text();
+        // }).then(lyrics => {
+        //     $("#lyrics").text(lyrics);
+        // });
+
+        // Using GET
+        fetch(lyricsURL + "?" + lyricsParams.toString())
+        .then(response => {
+            return response.text();
+        }).then(lyrics => {
+            $("#lyrics").text(lyrics);
+        });
+
+
+        // $.getJSON("align.json", processAlignment); 
     });
 });

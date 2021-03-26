@@ -5,9 +5,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Check the Rhyme</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="./script.js"></script>
+    <script type="text/javascript" src="{{url_for('static', filename='script.js')}}"></script>
 </head>
 <body>
     <form>
@@ -16,6 +16,11 @@
             <label for="song-name">Song name:</label>
             <br>
             <input type="text" id="song-name" name="song-name" placeholder="Song Name">
+            <br>
+            <br>
+            <label for="artist-name">Artist name:</label>
+            <br>
+            <input type="text" id="artist-name" name="artist-name" placeholder="Artist Name">
             <br>
             <br>
             <input type="checkbox" id="line-by-line" name="line-by-line">
@@ -34,7 +39,7 @@
     <!-- This audio is full song. Could be either type? Complicated getting timestamp in JS -->
     <audio controls id="audio">
         <!-- <source src="song.wav" type="audio/wav"> -->
-        <source src="song.mp3" type="audio/mp3">
+        <!-- <source src="song.mp3" type="audio/mp3"> -->
     </audio>
     <p>Lyrics of song:</p>
     <div id="lyrics"></div>
