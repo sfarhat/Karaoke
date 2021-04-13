@@ -58,8 +58,6 @@ $(document).ready(() => {
 
     function processAlignment(alignJSON) {
 
-        console.log(alignJSON);
-
         let transcript = alignJSON.transcript;
         // This is an important edge case, makes handling first line not any different
         transcript = "\r\n" + transcript;
@@ -216,36 +214,41 @@ $(document).ready(() => {
         animateHighlight = $("#animate-highlight").is(":checked");
         lineByLine = $("#line-by-line").is(":checked");
 
-        // audio.show();
+        audio.show();
 
         let lyricsURL = "/lyrics"
         let lyricsParams = new URLSearchParams();
 
-        lyricsParams.set("song-name", songName);
-        lyricsParams.set("artist-name", artistName);
+        lyricsParams.append("song-name", songName);
+        lyricsParams.append("artist-name", artistName);
 
         // Using POST
+        // Currently lyricsParams not working proprely for this
         // fetch(lyricsURL, {
-
         //     headers: {
         //         "Content-Type": "application/json"
         //     },
         //     method: "POST",
         //     body: JSON.stringify(lyricsParams)
         // }).then(response => {
-        //     return response.text();
-        // }).then(lyrics => {
-        //     $("#lyrics").text(lyrics);
+        //     console.log(response);
+        //     return response.json();
+        // }).then(alignment => {
+        //     console.log(alignment);
+        //     processAlignment(alignment);
+        //     // $("#lyrics").text(lyrics);
         // });
 
         // Using GET
         fetch(lyricsURL + "?" + lyricsParams.toString())
         .then(response => {
+            // console.log(response);
             return response.text();
-        }).then(lyrics => {
-            $("#lyrics").text(lyrics);
+        }).then(alignment => {
+            // $("#lyrics").text(lyrics);
+            // console.log(alignment);
+            processAlignment(JSON.parse(alignment));
         });
-
 
         // $.getJSON("align.json", processAlignment); 
     });
