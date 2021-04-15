@@ -2,6 +2,8 @@ import requests
 import bs4
 from flask import Flask, render_template, request 
 import youtube_dl
+from spleeter.separator import Separator
+import os
 
 app = Flask(__name__)
 
@@ -9,6 +11,7 @@ app = Flask(__name__)
 def get_lyrics(song_name, artist_name):
 
     # Extracting lyrics from Google
+    lyrics_file_name = 'lyrics.txt'
     payload = {"q": f"{song_name} {artist_name} lyrics"}
     url = "https://google.com/search"
 
@@ -17,20 +20,40 @@ def get_lyrics(song_name, artist_name):
 
     lyrics = soup.find_all(class_="hwc")[0].text
 
-    return lyrics
-
-def get_alignment(lyrics):
-
-    # Passing lyrics and audio into forced aligner
-    # TODO: can move this logic to JS (any benefit?) once audio logic figured outt
-    with open("lyrics.txt", "w") as f:
+    with open(lyrics_file_name, "w") as f:
         f.write(lyrics)
 
+    return lyrics_file_name
+
+def get_audio(song_name, artist_name):
+
+    # Extracting audio from Youtube
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }]
+    }
+
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        search_query = f"{song_name} {artist_name} audio" 
+        video = ydl.extract_info(f"ytsearch:{search_query}", download=True)['entries'][0]
+        # video_url = video['webpage_url']
+        # ydl.download([video_url])
+        audio_file_name = f"{video['title']}-{video['id']}.{ydl_opts['postprocessors'][0]['preferredcodec']}"
+
+    return audio_file_name
+
+def get_alignment(lyrics_file_path, audio_file_path):
+
+    # Passing lyrics and audio into forced aligner
     params = {'async': 'false'}
 
     files = {
-        'audio': open('separated_vocals.wav', 'rb'),
-        'transcript': open('old-lyrics.txt', 'rb')
+        'audio': open(audio_file_path, 'rb'),
+        'transcript': open(lyrics_file_path, 'rb')
     }
 
     # For now, store lyrics locally in file
@@ -52,26 +75,29 @@ def lyrics():
     if request.method == "GET":
         song_name, artist_name = request.args.get("song-name"), request.args.get("artist-name")
 
-    lyrics = get_lyrics(song_name, artist_name)
+    cwd = os.getcwd()
+    temp_dir = 'temp'
+    # os.makedirs(temp_dir)
 
-    # Extracting audio from Youtube
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }]
-    }
+    # Download lyrics to file in cwd
+    lyrics_file_name = get_lyrics(song_name, artist_name)
+    # lyrics_path = os.path.join(cwd, temp_dir, lyrics_file_name)
+    # Move to temp dir
+    # os.rename(os.path.join(cwd, lyrics_file_name), lyrics_path)
+    lyrics_path = os.path.join(cwd, lyrics_file_name)
 
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        search_query = song_name + " " + artist_name + " audio" 
-        video = ydl.extract_info(f"ytsearch:{search_query}", download=True)['entries'][0]
-        # video_url = video['webpage_url']
-        # ydl.download([video_url])
-        audio_file_name = f"{video['title']}-{video['id']}.{ydl_opts['postprocessors'][0]['preferredcodec']}"
+    # Download audio to file in cwd
+    audio_file_name = get_audio(song_name, artist_name)
+    audio_path = os.path.join(cwd, audio_file_name)
 
-    alignment_json = get_alignment(lyrics)
+    # Source separate audio and put result in temp dir
+    separator = Separator('spleeter:2stems')
+    # separator.separate_to_file(audio_path, os.path.join(cwd, temp_dir))
+    separator.separate_to_file(audio_path, cwd)
+
+    # audio path should be to separated vocals
+    alignment_json = get_alignment(lyrics_path, audio_path)
+
     return alignment_json
 
 @app.route("/")
