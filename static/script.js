@@ -1,7 +1,6 @@
 $(document).ready(() => {
     let songName, artistName, animateHighlight, lineByLine;
-    let audio = $("#audio");
-    audio.hide();
+    $("#audio").hide();
 
 
     function extractWord(transcript, word, currOffset) {
@@ -104,7 +103,7 @@ $(document).ready(() => {
                 }
 
                 // Edge case for reaching past last word in transcript
-                let nextStart = right === words.length ? audio.duration : words[right].start;
+                let nextStart = right === words.length ? $("#audio").duration : words[right].start;
 
                 // Look to the left without hitting beginning of transcript
                 let left = i - 1;
@@ -170,7 +169,7 @@ $(document).ready(() => {
     let highlightDuration;
     function highlightWord(words) {
 
-        let t = audio[0].currentTime; // index becuase multiple sources
+        let t = $("#audio")[0].currentTime; // index of multiple sources
         // Get index for highlighting and position for to help w/ showing line
         let highlightIndex = words.findIndex(word => (word.start <= t && word.end >= t));
         let highlightedWord = words[highlightIndex];
@@ -214,7 +213,6 @@ $(document).ready(() => {
         animateHighlight = $("#animate-highlight").is(":checked");
         lineByLine = $("#line-by-line").is(":checked");
 
-        audio.show();
 
         let lyricsURL = "/lyrics"
         let lyricsParams = new URLSearchParams();
@@ -246,7 +244,10 @@ $(document).ready(() => {
             return response.text();
         }).then(alignment => {
             // $("#lyrics").text(lyrics);
-            // console.log(alignment);
+            console.log(alignment);
+            // song.mp3 will be loaded in by Flask
+            $("#audio").attr("src", "/music/song.mp3")
+            $("#audio").show();
             processAlignment(JSON.parse(alignment));
         });
 

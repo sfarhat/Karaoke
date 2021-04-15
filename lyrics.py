@@ -1,9 +1,10 @@
 import requests
 import bs4
-from flask import Flask, render_template, request 
+from flask import Flask, render_template, request, send_file 
 import youtube_dl
 from spleeter.separator import Separator
 import os
+import shutil
 
 app = Flask(__name__)
 
@@ -11,7 +12,6 @@ app = Flask(__name__)
 def get_lyrics(song_name, artist_name):
 
     # Extracting lyrics from Google
-    lyrics_file_name = 'lyrics.txt'
     payload = {"q": f"{song_name} {artist_name} lyrics"}
     url = "https://google.com/search"
 
@@ -20,10 +20,10 @@ def get_lyrics(song_name, artist_name):
 
     lyrics = soup.find_all(class_="hwc")[0].text
 
+    # Saves lyrics to 'lyrics.txt'
+    lyrics_file_name = 'lyrics.txt'
     with open(lyrics_file_name, "w") as f:
         f.write(lyrics)
-
-    return lyrics_file_name
 
 def get_audio(song_name, artist_name):
 
@@ -44,7 +44,9 @@ def get_audio(song_name, artist_name):
         # ydl.download([video_url])
         audio_file_name = f"{video['title']}-{video['id']}.{ydl_opts['postprocessors'][0]['preferredcodec']}"
 
-    return audio_file_name
+    # Save downloaded song to 'song.mp3' (assumes file downloaded is .mp3 codec which is specified in ydl_opts)
+    os.rename(os.path.join(os.getcwd(), audio_file_name), 
+                os.path.join(os.getcwd(), f"song.{ydl_opts['postprocessors'][0]['preferredcodec']}"))
 
 def get_alignment(lyrics_file_path, audio_file_path):
 
@@ -76,29 +78,39 @@ def lyrics():
         song_name, artist_name = request.args.get("song-name"), request.args.get("artist-name")
 
     cwd = os.getcwd()
-    temp_dir = 'temp'
-    # os.makedirs(temp_dir)
+    print(cwd)
 
     # Download lyrics to file in cwd
-    lyrics_file_name = get_lyrics(song_name, artist_name)
-    # lyrics_path = os.path.join(cwd, temp_dir, lyrics_file_name)
-    # Move to temp dir
-    # os.rename(os.path.join(cwd, lyrics_file_name), lyrics_path)
-    lyrics_path = os.path.join(cwd, lyrics_file_name)
+    get_lyrics(song_name, artist_name)
+    lyrics_path = os.path.join(cwd, 'lyrics.txt')
 
     # Download audio to file in cwd
-    audio_file_name = get_audio(song_name, artist_name)
-    audio_path = os.path.join(cwd, audio_file_name)
+    get_audio(song_name, artist_name)
+    audio_path = os.path.join(cwd, 'song.mp3')
 
-    # Source separate audio and put result in temp dir
+    # This creates 2 files: vocals/accompaniment.wav in folder named audio_file_name
+    # TODO: figure out how to keep pretrained_models kept in storage to avoid redownloading
+    # For now, Spleeter stores it in the directory above the current one?
+    # Consider using Docker container for this. We can specify locations of audio files and models for container to use.
     separator = Separator('spleeter:2stems')
-    # separator.separate_to_file(audio_path, os.path.join(cwd, temp_dir))
     separator.separate_to_file(audio_path, cwd)
 
-    # audio path should be to separated vocals
-    alignment_json = get_alignment(lyrics_path, audio_path)
+    # This naming convention is predetermined by Spleeter (./song name/vocals.wav)
+    separated_audio_path = os.path.join(os.getcwd(), 'song', 'vocals.wav')
+
+    # Audio path should be to separated vocals
+    alignment_json = get_alignment(lyrics_path, separated_audio_path)
+
+    # We have created lyrics.txt, song.mp3, and separated .wav files in the song directory
+    # Only song.mp3 is necessary for the front-end, so we can delete the rest before returning
+    os.remove(os.path.join(os.getcwd(), 'lyrics.txt'))
+    shutil.rmtree(os.path.join(os.getcwd(), 'song'))
 
     return alignment_json
+
+@app.route('/music/<path:filename>')
+def download_file(filename):
+    return send_file(filename)
 
 @app.route("/")
 def output():
