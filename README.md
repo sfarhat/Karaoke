@@ -1,4 +1,4 @@
-# Karaoke
+# Karaoke 🎤
 
 A web app that, given a song name and its artist, will display the full karaoke experience to sing along too. Complete with the song, lyrics, and a synchronized lyric guide.
 
