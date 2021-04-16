@@ -213,44 +213,39 @@ $(document).ready(() => {
         animateHighlight = $("#animate-highlight").is(":checked");
         lineByLine = $("#line-by-line").is(":checked");
 
-
-        let lyricsURL = "/lyrics"
-        let lyricsParams = new URLSearchParams();
-
-        lyricsParams.append("song-name", songName);
-        lyricsParams.append("artist-name", artistName);
-
-        // Using POST
-        // Currently lyricsParams not working proprely for this
-        // fetch(lyricsURL, {
-        //     headers: {
-        //         "Content-Type": "application/json"
-        //     },
-        //     method: "POST",
-        //     body: JSON.stringify(lyricsParams)
-        // }).then(response => {
-        //     console.log(response);
-        //     return response.json();
-        // }).then(alignment => {
-        //     console.log(alignment);
-        //     processAlignment(alignment);
-        //     // $("#lyrics").text(lyrics);
-        // });
+        let params = new URLSearchParams();
+        params.append("song-name", songName);
+        params.append("artist-name", artistName);
 
         // Using GET
-        fetch(lyricsURL + "?" + lyricsParams.toString())
-        .then(response => {
-            // console.log(response);
-            return response.text();
-        }).then(alignment => {
-            // $("#lyrics").text(lyrics);
-            console.log(alignment);
+        fetch("/lyrics?" + params.toString())
+        .then(lyricsResponse => {
+            if (!lyricsResponse.ok) {
+                throw new Error("Lyric retrieval failed. Probably because Google thinks you're a robot. Please try again in ~10 minutes.");
+            }
+            return fetch("/audio?" + params.toString());
+        })
+        .then(audioResponse => {
+            if (!audioResponse.ok) {
+                throw new Error("Audio retrieval failed. Probably because Youtube doesn't have the audio.")
+            }
+            return fetch("/source-separator");
+        })
+        .then(separationResponse => {
+            if (!separationResponse.ok) {
+                throw new Error("Source separation failed.")
+            }
+            return fetch("/alignment");
+        })
+        .then(alignmentReponse => {
+            console.log(alignmentReponse);
             // song.mp3 will be loaded in by Flask
             $("#audio").attr("src", "/music/song.mp3")
             $("#audio").show();
-            processAlignment(JSON.parse(alignment));
+            processAlignment(JSON.parse(alignmentReponse));
+        })
+        .catch(error => {
+            console.error('There has been a problem with your fetch operation:', error);
         });
-
-        // $.getJSON("align.json", processAlignment); 
     });
 });
