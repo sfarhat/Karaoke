@@ -223,18 +223,21 @@ $(document).ready(() => {
             if (!lyricsResponse.ok) {
                 throw new Error("Lyric retrieval failed. Probably because Google thinks you're a robot. Please try again in ~10 minutes.");
             }
+            $("#lyrics").text("Lyrics retrieved, getting audio");
             return fetch("/audio?" + params.toString());
         })
         .then(audioResponse => {
             if (!audioResponse.ok) {
                 throw new Error("Audio retrieval failed. Probably because Youtube doesn't have the audio.")
             }
+            $("#lyrics").text("Audio retrieved, separating it into vocals and accompaniament");
             return fetch("/source-separator");
         })
         .then(separationResponse => {
             if (!separationResponse.ok) {
                 throw new Error("Source separation failed.")
             }
+            $("#lyrics").text("Audio separated, getting alignment")
             return fetch("/alignment");
         })
         .then(alignmentReponse => {
