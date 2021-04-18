@@ -1,12 +1,7 @@
-FROM ubuntu:20.04
+FROM python:3.8-slim
 
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:deadsnakes/ppa && \
-    apt-get install -y \
-    python3.8 python3-dev python3-pip \
-    ffmpeg && \
-    apt-get clean
+    apt-get install -y ffmpeg 
 
 COPY requirements.txt /tmp/
 
