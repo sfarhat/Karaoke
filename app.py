@@ -48,7 +48,8 @@ def audio():
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192',
-        }]
+        }],
+        'cachedir': False
     }
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -71,7 +72,7 @@ def source_separator():
 
     # Must be called after /audio since it expects song.mp3 to exist
     # This creates 2 files: vocals/accompaniment.wav in folder named audio_file_name
-    # TODO: figure out how to keep pretrained_models kept in storage to avoid redownloading
+    # TODO: consider using Docker container for this as well, can be called via Docker API
     print("SEPARATING AUDIO...")
 
     cwd = os.getcwd()
