@@ -17,6 +17,6 @@ Using Javascript and jQuery, I GET the alignment from the backend, parse the res
 
 ### TODO
 
-Docker-ize the app to make deployment cleaner
-
 Stylize the page for better UI/UX
+
+Deploy
