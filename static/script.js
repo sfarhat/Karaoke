@@ -206,13 +206,14 @@ $(document).ready(() => {
     };
 
     $("#submit").click(() => {
-        // TODO: add boolean check if song has already loaded to prevent duplicates
-        // TODO: make submit redirect to new page with UI preventing duplicates w/o returning home to restart process
+        // TODO: UI/UX: on submit, make form unusable so as to not mess with anything
         // check console to see what this means
+
         songName = $("#song-name").val();
         artistName = $("#artist-name").val();
         animateHighlight = $("#animate-highlight").is(":checked");
         lineByLine = $("#line-by-line").is(":checked");
+
 
         let params = new URLSearchParams();
         params.append("song-name", songName);
