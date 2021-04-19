@@ -131,3 +131,5 @@ dmypy.json
 # added
 .vscode
 .DS_Store
+.mp3
+pretrained_models
