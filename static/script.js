@@ -207,6 +207,7 @@ $(document).ready(() => {
 
     $("#submit").click(() => {
         // TODO: add boolean check if song has already loaded to prevent duplicates
+        // TODO: make submit redirect to new page with UI preventing duplicates w/o returning home to restart process
         // check console to see what this means
         songName = $("#song-name").val();
         artistName = $("#artist-name").val();
@@ -218,33 +219,34 @@ $(document).ready(() => {
         params.append("artist-name", artistName);
 
         // Using GET
-        $("#progress").append("Request received, fetching lyrics\n");
+        $("#progress").append("<p>Request received, fetching lyrics...</p>");
         fetch("/lyrics?" + params.toString())
         .then(lyricsResponse => {
             if (!lyricsResponse.ok) {
                 throw new Error("Lyric retrieval failed. Probably because Google thinks you're a robot. Please try again in ~10 minutes.");
             }
-            $("#progress").append("Lyrics retrieved, getting audio\n");
+            $("#progress").append("<p>Lyrics retrieved, getting audio...</p>");
             return fetch("/audio?" + params.toString());
         })
         .then(audioResponse => {
             if (!audioResponse.ok) {
                 throw new Error("Audio retrieval failed. Probably because Youtube doesn't have the audio.")
             }
-            $("#progress").append("Audio retrieved, separating it into vocals and accompaniament\n");
+            $("#progress").append("<p>Audio retrieved, separating it into vocals and accompaniament...</p>");
             return fetch("/source-separator");
         })
         .then(separationResponse => {
             if (!separationResponse.ok) {
                 throw new Error("Source separation failed.")
             }
-            $("#progress").append("Audio separated, getting alignment\n")
+            $("#progress").append("<p>Audio separated, getting alignment...</p>")
             return fetch("/alignment");
         })
         .then(alignmentResponse => {
             if (!alignmentResponse.ok) {
                 throw new Error("Alignment failed.")
             }
+            $("#progress").append("<p>Finished!</p>")
             return alignmentResponse.json();
         })
         .then(alignmentBody => {
