@@ -1,3 +1,5 @@
+# ubuntu:20.04, python:3.8 unecessarily large
+# python:3.8-alpine makes pip run slow
 FROM python:3.8-slim
 
 RUN apt-get update && \

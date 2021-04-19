@@ -1,9 +1,15 @@
+# By default, Docker names project directory name, and each image is called {project}_{service}_{index}
 version: "3.8"
 
 services:   
     app:
         build: 
             context: .
-            dockerfile: Dockerfile_python
+            dockerfile: Dockerfile
         ports: 
             - "5000:5000"
+
+    aligner:
+        image: cnbeining/gentle:latest
+        ports:
+            - "8765:8765"
