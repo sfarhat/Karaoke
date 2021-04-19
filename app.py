@@ -109,7 +109,7 @@ def alignment():
     # payload = {'transcript': lyrics}
 
     # .text will just return text, whereas .json() should json-ify it but currently does nothing different...
-    # Docker sets up a local network with each container reachable by http:{service-name}:{container port}
+    # Docker sets up a local network with each container reachable by http://{service-name}:{container port}
     alignment_json = requests.post('http://aligner:8765/transcriptions', params=params, files=files).json()
 
     print("ALIGNMENT RETRIEVED")

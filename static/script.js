@@ -218,34 +218,41 @@ $(document).ready(() => {
         params.append("artist-name", artistName);
 
         // Using GET
+        $("#progress").append("Request received, fetching lyrics\n");
         fetch("/lyrics?" + params.toString())
         .then(lyricsResponse => {
             if (!lyricsResponse.ok) {
                 throw new Error("Lyric retrieval failed. Probably because Google thinks you're a robot. Please try again in ~10 minutes.");
             }
-            $("#lyrics").text("Lyrics retrieved, getting audio");
+            $("#progress").append("Lyrics retrieved, getting audio\n");
             return fetch("/audio?" + params.toString());
         })
         .then(audioResponse => {
             if (!audioResponse.ok) {
                 throw new Error("Audio retrieval failed. Probably because Youtube doesn't have the audio.")
             }
-            $("#lyrics").text("Audio retrieved, separating it into vocals and accompaniament");
+            $("#progress").append("Audio retrieved, separating it into vocals and accompaniament\n");
             return fetch("/source-separator");
         })
         .then(separationResponse => {
             if (!separationResponse.ok) {
                 throw new Error("Source separation failed.")
             }
-            $("#lyrics").text("Audio separated, getting alignment")
+            $("#progress").append("Audio separated, getting alignment\n")
             return fetch("/alignment");
         })
-        .then(alignmentReponse => {
-            console.log(alignmentReponse);
+        .then(alignmentResponse => {
+            if (!alignmentResponse.ok) {
+                throw new Error("Alignment failed.")
+            }
+            return alignmentResponse.json();
+        })
+        .then(alignmentBody => {
+            console.log(alignmentBody);
             // song.mp3 will be loaded in by Flask
             $("#audio").attr("src", "/music/song.mp3")
             $("#audio").show();
-            processAlignment(JSON.parse(alignmentReponse));
+            processAlignment(alignmentBody);
         })
         .catch(error => {
             console.error('There has been a problem with your fetch operation:', error);
