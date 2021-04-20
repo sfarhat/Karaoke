@@ -1,7 +1,7 @@
 Karaoke 🎤
 =====
 
-![Docker Build Status](https://img.shields.io/docker/build/seanfarhat/karaoke) ![Docker Image Size (tag)](https://img.shields.io/docker/image-size/seanfarhat/karaoke/latest)
+![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/seanfarhat/karaoke) ![Docker Image Size (tag)](https://img.shields.io/docker/image-size/seanfarhat/karaoke/latest)
 
 A web app that, given a song name and its artist, will display the full karaoke experience to sing along too. Complete with the song, lyrics, and a synchronized lyric guide.
 
@@ -61,7 +61,8 @@ Installation
         
 3. The app is now running on [`localhost:5000`](http://localhost:5000)
 
-### TODO
+TODO
+-----
 
 Stylize the page for better UI/UX
 
