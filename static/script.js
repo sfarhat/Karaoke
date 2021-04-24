@@ -1,5 +1,7 @@
 $(document).ready(() => {
     let songName, artistName, animateHighlight, lineByLine;
+    let displayModes = {'check-the-rhyme': 0, 'karaoke': 1};
+    let selectedMode;
     $("#audio").hide();
 
 
@@ -88,6 +90,7 @@ $(document).ready(() => {
                 // Handles edge case of "unfound" words having undefined start and end times
                 // Will take end time of previous "found" word and start time of next "success" word
                 // Divide this period of time equally among all "unfound" word between these
+                // TODO: thinking that this is not that helpful, just highlight all at once instead
 
                 // console.log(word)
 
@@ -205,54 +208,86 @@ $(document).ready(() => {
         });
     };
 
+    function updateProgress(percentage, message) {
+        $('#progress-complete').css('width', `${percentage}%`);
+        $('#progress-message').append(`<p>${percentage}% complete...${message}</p>`);
+    };
+
     $("#submit").click(() => {
         // TODO: UI/UX: on submit, make form unusable so as to not mess with anything
         // check console to see what this means
+        animateHighlight = $("#animate-highlight").is(":checked");
+    });
+
+    $('#check-the-rhyme').click(() => {
+        selectedMode = displayModes['check-the-rhyme'];
+        $('#check-the-rhyme').css('opacity', 1);
+        $('#karaoke').css('opacity', 0.5);
+    });
+
+    $('#karaoke').click(() => {
+        selectedMode = displayModes['karaoke'];
+        $('#karaoke').css('opacity', 1);
+        $('#check-the-rhyme').css('opacity', 0.5);
+    });
+
+    $("#start").click(() => {
 
         songName = $("#song-name").val();
         artistName = $("#artist-name").val();
-        animateHighlight = $("#animate-highlight").is(":checked");
-        lineByLine = $("#line-by-line").is(":checked");
 
+        if (songName === "" || artistName === "") {
+            updateProgress(0, "Please provide the song and artist name before selecting which mode!");
+            return;
+        }
+
+        if (selectedMode == null) {
+            updateProgress(0, "Please choose which mode you want");
+            return;
+        }
+
+        lineByLine = selectedMode; 
 
         let params = new URLSearchParams();
         params.append("song-name", songName);
         params.append("artist-name", artistName);
 
         // Using GET
-        $("#progress").append("<p>Request received, fetching lyrics...</p>");
+        updateProgress(0, "Request received, fetching lyrics...");
         fetch("/lyrics?" + params.toString())
         .then(lyricsResponse => {
             if (!lyricsResponse.ok) {
                 throw new Error("Lyric retrieval failed. Probably because Google thinks you're a robot. Please try again in ~10 minutes.");
             }
-            $("#progress").append("<p>Lyrics retrieved, getting audio...</p>");
+            updateProgress(25, "Lyrics retrieved, getting audio...");
             return fetch("/audio?" + params.toString());
         })
         .then(audioResponse => {
             if (!audioResponse.ok) {
                 throw new Error("Audio retrieval failed. Probably because Youtube doesn't have the audio.")
             }
-            $("#progress").append("<p>Audio retrieved, separating it into vocals and accompaniament...</p>");
+            updateProgress(50, "Audio retrieved, separating it into vocals and accompaniament...");
             return fetch("/source-separator");
         })
         .then(separationResponse => {
             if (!separationResponse.ok) {
                 throw new Error("Source separation failed.")
             }
-            $("#progress").append("<p>Audio separated, getting alignment...</p>")
+            updateProgress(75, "Audio separated, getting alignment...")
             return fetch("/alignment");
         })
         .then(alignmentResponse => {
             if (!alignmentResponse.ok) {
                 throw new Error("Alignment failed.")
             }
-            $("#progress").append("<p>Finished!</p>")
+            updateProgress(100, "Finished!")
             return alignmentResponse.json();
         })
         .then(alignmentBody => {
             console.log(alignmentBody);
             // song.mp3 will be loaded in by Flask
+            // TODO: if karaoke load in accompaniament instead
+            // Would require changing download codec to .wav for consistency between modes
             $("#audio").attr("src", "/music/song.mp3")
             $("#audio").show();
             processAlignment(alignmentBody);

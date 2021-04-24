@@ -17,33 +17,48 @@
     <script type="text/javascript" src="{{url_for('static', filename='script.js')}}"></script>
 </head>
 <body>
-    <form>
-        <fieldset>
-            <legend>Lyric Lookup</legend>
+    <div class="query">
+        <form>
             <label for="song-name">Song name:</label>
-            <br>
-            <input type="text" id="song-name" name="song-name" placeholder="Song Name">
-            <br>
-            <br>
+            <input type="text" id="song-name" name="song-name">
             <label for="artist-name">Artist name:</label>
-            <br>
-            <input type="text" id="artist-name" name="artist-name" placeholder="Artist Name">
-            <br>
-            <br>
-            <input type="checkbox" id="line-by-line" name="line-by-line">
+            <input type="text" id="artist-name" name="artist-name">
+            <!-- <input type="checkbox" id="line-by-line" name="line-by-line">
             <label for="line-by-line">Show lyrics line-by-line</label>
             <br>
             <input type="checkbox" id="animate-highlight" name="animate-highlight">
             <label for="animate-highlight">Animated highlighting of lyrics</label>
-            <br>
-            <br>
-            <input type="button" id="submit" value="Search">
-        </fieldset>
-    </form>
-    <br>
-    <br>
+            -->
+        </form>
+    </div>
+    <div class="display-modes">
+        <div id="check-the-rhyme">
+            <p class="mode-title">
+                Check the Rhyme
+            </p>
+            <p class="description">
+                Inspired by Genius' Check the Rhyme series, this mode will play the song,
+                display all the lyrics, and highlight the rhyming words.
+            </p>
+        </div>
+        <div id="karaoke">
+            <p class="mode-title">
+                Karaoke
+            </p>
+            <p class="description">
+                This mode will play the instrumental of the song alongside
+                a lyrical guide
+            </p>
+        </div>
+    </div>
+    <div id="start">Start!</div>
     <div id="progress">
-        <p>Progress:</p>
+        <div id="progress-bar">
+            <div id="progress-complete"></div>
+        </div>
+        <div id="progress-message">
+            <p>Progress:</p>
+        </div>
     </div>
     <audio controls id="audio"></audio>
     <p>Lyrics of song:</p>

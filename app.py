@@ -129,6 +129,7 @@ def alignment():
     # We have created lyrics.txt, song.mp3, and separated .wav files in the song directory
     # Only song.mp3 is necessary for the front-end, so we can delete the rest before returning
     os.remove(os.path.join(os.getcwd(), 'lyrics.txt'))
+    # TODO: use accompaniament.wav for karaoke mode
     shutil.rmtree(os.path.join(os.getcwd(), 'song'))
 
     return alignment_json

@@ -1,3 +1,127 @@
+* {
+  box-sizing: border-box;
+}
+
+.query {
+  margin: 5rem auto;
+  width: 35%;
+  border: 0.1rem dashed gray;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem 1.4rem;
+}
+
+.query input[type=text] {
+  width: 100%;
+  border: 0.15rem solid gray;
+  border-radius: 1rem;
+  padding: 1.2rem 0.8rem;
+  font-size: 1.5rem;
+}
+
+.query input[type=text]:focus {
+  /* Override default focus that doesn't align w/ rounded corners border */
+  outline-width: 0;
+  border-width: 0.3rem;
+}
+
+.query label {
+  color: gray;
+  position: relative;
+  top: 0.7rem;
+  left: 1rem;
+  background-color: white;
+  font-size: 1.2rem;
+  padding: 0 0.5em;
+}
+
+.query label:focus {
+  font-weight: bold;
+}
+
+.display-modes {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-evenly;
+  align-items: stretch;
+}
+
+.display-modes div {
+  border: 0.2rem solid;
+  border-radius: 1rem;
+  width: 30%;
+  text-align: center;
+  padding: 0 0.75rem;
+  opacity: 0.5;
+  transition: opacity 0.8s ease-out 0s;
+}
+
+.display-modes div:hover {
+  cursor: pointer;
+}
+
+#check-the-rhyme {
+  display: inline-block;
+  border-color: yellow;
+  font-family: Programme, Arial, sans-serif;
+  background-color: lightgray;
+  line-height: 1.5rem;
+}
+
+#check-the-rhyme:hover {
+  opacity: 1 !important;
+}
+
+#karaoke {
+  display: inline-block;
+  border-color: #F404F5;
+  background-color: #410594;
+  color: #FC8CC1;
+  font-family: NeonTubes2, Arial, sans-serif;
+  line-height: 1.5rem;
+  letter-spacing: .07rem;
+}
+
+#karaoke:hover {
+  opacity: 1 !important;
+}
+
+.mode-title {
+  font-size: larger;
+  font-weight: bolder;
+}
+
+#start {
+  margin: 5rem auto;
+  width: 10%;
+  text-align: center;
+  border: 0.2rem solid green;
+  border-radius: 5rem;
+  padding: 0.7rem 0;
+  font-size: x-large;
+  background-color: lightgreen
+}
+
+#start:hover {
+  cursor: pointer;
+}
+
+#progress-bar {
+  width: 50%;
+  margin: 0 auto;
+  background-color: gray;
+}
+
+#progress-complete {
+  width: 0%;
+  height: 1rem;
+  background-color: green;
+}
+
+#progress-message {
+  margin: 0 auto;
+  text-align: center;
+}
+
 .hidden {
   display: none;
 }
@@ -26,21 +150,15 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  padding-top: 10%;
 }
 
 @font-face {
     font-family: 'Programme';
     src: url(https://assets.genius.com/fonts/programme_normal.woff2?1615497096) format('woff2'),
       url(https://assets.genius.com/fonts/programme_normal.woff?1615497096) format('woff');
-    font-style: normal;
-    font-weight: normal;
   }  
 
-@font-face {
-    font-family: 'Programme';
-    src: url(https://assets.genius.com/fonts/programme_light.woff2?1615497096) format('woff2'),
-      url(https://assets.genius.com/fonts/programme_light.woff?1615497096) format('woff');
-    font-style: normal;
-    font-weight: 100;
+  @font-face{
+    font-family: 'NeonTubes2';
+    src: url('./fonts/NeonTubes2.otf');
   }
