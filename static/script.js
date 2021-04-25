@@ -2,8 +2,6 @@ $(document).ready(() => {
     let songName, artistName, animateHighlight, lineByLine;
     let displayModes = {'check-the-rhyme': 0, 'karaoke': 1};
     let selectedMode;
-    $("#audio").hide();
-
 
     function extractWord(transcript, word, currOffset) {
         // punctuation -> space/newline -> punctuation -> word -> punctuation -> space/newline
@@ -289,7 +287,6 @@ $(document).ready(() => {
             // TODO: if karaoke load in accompaniament instead
             // Would require changing download codec to .wav for consistency between modes
             $("#audio").attr("src", "/music/song.mp3")
-            $("#audio").show();
             processAlignment(alignmentBody);
         })
         .catch(error => {

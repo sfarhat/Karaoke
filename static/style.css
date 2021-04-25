@@ -2,9 +2,21 @@
   box-sizing: border-box;
 }
 
+.container {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: start;
+}
+
+#queue {
+  border-right: 0.2rem dashed gray;
+  padding: 0 3rem;
+  width: 40rem;
+}
+
 .query {
   margin: 5rem auto;
-  width: 35%;
+  width: 20rem;
   border: 0.1rem dashed gray;
   border-radius: 0.5rem;
   padding: 0.5rem 1rem 1.4rem;
@@ -48,7 +60,7 @@
 .display-modes div {
   border: 0.2rem solid;
   border-radius: 1rem;
-  width: 30%;
+  width: 15rem;
   text-align: center;
   padding: 0 0.75rem;
   opacity: 0.5;
@@ -90,15 +102,16 @@
   font-weight: bolder;
 }
 
-#start {
+#add-to-queue {
   margin: 5rem auto;
-  width: 10%;
+  width: 15rem;
   text-align: center;
   border: 0.2rem solid green;
   border-radius: 5rem;
   padding: 0.7rem 0;
   font-size: x-large;
-  background-color: lightgreen
+  background-color: lightgreen;
+  cursor: pointer; 
 }
 
 #start:hover {
@@ -120,6 +133,14 @@
 #progress-message {
   margin: 0 auto;
   text-align: center;
+}
+
+#player {
+  margin: 10rem auto;
+  text-align: center;
+}
+
+#audio {
 }
 
 .hidden {
@@ -145,12 +166,6 @@
     text-align: center;
 }
 
-#audio {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-}
 
 @font-face {
     font-family: 'Programme';
