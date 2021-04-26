@@ -20,24 +20,27 @@ This directly motivates our design.
 
 ### Backend Design (Flask/Python)
 
-- To get the lyrics, I used the `requests` and `beautifulsoup4` libraries to scrape Google Search results, since they conveniently serve the raw lyrics.
 - To get the song audio, I used the [`youtube-dl`](https://github.com/ytdl-org/youtube-dl) library to scrape Youtube for the video containing the song's audio, and extracted it via `ffmpeg`.
+- To get the lyrics, I used the `requests` and `beautifulsoup4` libraries to scrape Google Search results, since they conveniently serve the raw lyrics.
 - For improved alignment, I passed the song into a source separator. I chose to use [`Spleeter by Deezer`](https://github.com/deezer/spleeter) since they provided an easy to use Python API.
 - To get the alignment, I passed in the lyrics and separated vocals into a forced aligner. I chose to use the [`Gentle Aligner`](https://github.com/lowerquality/gentle) in the form of a Docker container which functions as a REST API. Unfortunately, the official container on Docker Hub is not actively maintained, so I'm using this updated one instead [`cnbeining/gentle`](https://hub.docker.com/r/cnbeining/gentle)
 
 ### Frontend Design
 
-1. An HTML form will receive the desired song and artist name
-2. Javascript uses the Fetch API to query the Flask backend for the data/behavior it wants in the following order
+1. An HTML form will receive the desired song/artist name and desired mode (for now karaoke is only supported)
+2. Javascript uses the Fetch API to query the Flask backend with one POST request at the `/create-alignment` endpoint, creating and storing the relevant files in a directory named after the title of the Youtube video the song was downloaded from (this is for consistency among multiple requests mapping to the same song). For example, say we requested a song which downloaded its audio from a Youtube video called "Example Song". The directory would be organized as follows:
 
-    1. Lyrics via the URL `/lyrics?song-name={song name}+artist-name={artist name}`. It receives an `OK` response if the backend successfully saves the lyrics to a local `.txt` file
-    2. Audio via `/audio?song-name={song name}+artist-name={artist name}`. It receives an `OK` response if the backend successfully saves the song to a local `.mp3` file
-    3. Source separation via `/source-separator`. It receives an `OK` response if the backend successfuly separates the song audio and saves a local `vocals.wav` file
-    4. Alignment via `/alignment`. If successful, it receives a `JSON` with the word-to-timestamps for each word in the lyrics
-    
+        - Example Song/
+            - lyrics.txt
+            - song.wav (used for audio player)
+            - song/
+                - vocals.wav (used for improved alignment)
+                - accompaniment.wav (used for audio player if desired)
+            - align.json
+
 3. Display the fetched lyrics
-4. Create a player for the fetched song
-5. Feed the alignment `JSON` into an animation pipeline that will highlight the appropriate word(s) in time with the song playing
+4. Fetch the song from the `/audio/Example Song` endpoint and feed it into a player 
+5. Fetch the alignment from the `/alignment/Example Song` endpoint and feed it into an animation pipeline that will highlight the appropriate word(s) in time with the song playing
 
 This entire process takes between 1-2 minutes. The very first run will take a bit longer because it needs to download the pretrained models necessary for the aligner to work.
 
@@ -63,7 +66,5 @@ Installation
 
 TODO
 -----
-
-Stylize the page for better UI/UX
 
 Create a better Forced Aligner

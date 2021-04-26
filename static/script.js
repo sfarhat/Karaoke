@@ -257,7 +257,7 @@ $(document).ready(() => {
         updateProgress(0, "Request received, fetching lyrics...");
 
         // Gives song/artist name, receives name of directory in internal filesystem where relevant files are
-        fetch('/alignment', fetchData)
+        fetch('/create-alignment', fetchData)
         .then(response => {
             if (!response.ok) {
                 throw new Error("Check body of response for detailed error info");
@@ -267,11 +267,11 @@ $(document).ready(() => {
         .then(directory => {
             console.log(directory);
             if (lineByLine) {
-                $("#audio").attr('src', `/${directory}/audio`);
+                $("#audio").attr('src', `/audio/${directory}`);
             } else {
-                $("#audio").attr('src', `/${directory}/audio`);
+                $("#audio").attr('src', `/audio/${directory}`);
             }
-            $.getJSON(`${directory}/alignment`, processAlignment);
+            $.getJSON(`/alignment/${directory}`, processAlignment);
         })
         .catch(error => {
             console.error('There has been a problem with your fetch operation:', error);

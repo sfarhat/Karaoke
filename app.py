@@ -8,7 +8,7 @@ import json
 
 app = Flask(__name__)
 
-@app.route('/alignment', methods=['POST'])
+@app.route('/create-alignment', methods=['POST'])
 def main():
 
     """
@@ -45,7 +45,7 @@ def main():
         lyrics_file_name = 'lyrics.txt'
         lyrics_path = os.path.join(working_dir_path, lyrics_file_name)
 
-        # Path will exist is we have cached work from a previous request
+        # Path will exist if we have cached work from a previous request
         if not os.path.exists(lyrics_path):
             get_lyrics(song_name, artist_name, lyrics_path)
 
@@ -135,8 +135,6 @@ def get_alignment(alignment_path, lyrics_path, vocals_path):
         'transcript': open(lyrics_path, 'rb')
     }
 
-    # payload = {'transcript': lyrics}
-
     # .text will just return text, whereas .json() should json-ify it but currently does nothing different...
     # Docker sets up a local network with each container reachable by http://{service-name}:{container port}
     try:
@@ -147,11 +145,11 @@ def get_alignment(alignment_path, lyrics_path, vocals_path):
     with open(alignment_path, "w") as f:
         json.dump(alignment_json, f)
 
-@app.route('/<path:dir_name>/audio')
+@app.route('/audio/<path:dir_name>')
 def get_audio_file(dir_name):
     return send_from_directory(dir_name, 'song.wav')
 
-@app.route('/<path:dir_name>/alignment')
+@app.route('/alignment/<path:dir_name>')
 def get_alignment_file(dir_name):
     return send_from_directory(dir_name, 'align.json')
 

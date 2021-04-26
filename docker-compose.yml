@@ -1,4 +1,4 @@
-# By default, Docker names project directory name, and each image is called {project}_{service}_{index}
+# By default, Docker names project directory name, names built images {project}_{service}, and names each container {project}_{service}_{index}
 version: "3.8"
 
 services:   
