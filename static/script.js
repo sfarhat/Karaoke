@@ -229,7 +229,7 @@ $(document).ready(() => {
         $('#check-the-rhyme').css('opacity', 0.5);
     });
 
-    $("#start").click(() => {
+    $("#add-to-queue").click(() => {
 
         songName = $("#song-name").val();
         artistName = $("#artist-name").val();
@@ -245,49 +245,33 @@ $(document).ready(() => {
         }
 
         lineByLine = selectedMode; 
+        // Temporarily disabled until I decide whether I like this UI or not
+        lineByLine = false;
+        let queryData = {'song-name': songName, 'artist-name': artistName}
+        let fetchData = {
+            method: 'POST',
+            body: JSON.stringify(queryData),
+            headers: {'Content-Type': 'application/json'}
+        }
 
-        let params = new URLSearchParams();
-        params.append("song-name", songName);
-        params.append("artist-name", artistName);
-
-        // Using GET
         updateProgress(0, "Request received, fetching lyrics...");
-        fetch("/lyrics?" + params.toString())
-        .then(lyricsResponse => {
-            if (!lyricsResponse.ok) {
-                throw new Error("Lyric retrieval failed. Probably because Google thinks you're a robot. Please try again in ~10 minutes.");
+
+        // Gives song/artist name, receives name of directory in internal filesystem where relevant files are
+        fetch('/alignment', fetchData)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Check body of response for detailed error info");
             }
-            updateProgress(25, "Lyrics retrieved, getting audio...");
-            return fetch("/audio?" + params.toString());
+            return response.text();
         })
-        .then(audioResponse => {
-            if (!audioResponse.ok) {
-                throw new Error("Audio retrieval failed. Probably because Youtube doesn't have the audio.")
+        .then(directory => {
+            console.log(directory);
+            if (lineByLine) {
+                $("#audio").attr('src', `/${directory}/audio`);
+            } else {
+                $("#audio").attr('src', `/${directory}/audio`);
             }
-            updateProgress(50, "Audio retrieved, separating it into vocals and accompaniament...");
-            return fetch("/source-separator");
-        })
-        .then(separationResponse => {
-            if (!separationResponse.ok) {
-                throw new Error("Source separation failed.")
-            }
-            updateProgress(75, "Audio separated, getting alignment...")
-            return fetch("/alignment");
-        })
-        .then(alignmentResponse => {
-            if (!alignmentResponse.ok) {
-                throw new Error("Alignment failed.")
-            }
-            updateProgress(100, "Finished!")
-            return alignmentResponse.json();
-        })
-        .then(alignmentBody => {
-            console.log(alignmentBody);
-            // song.mp3 will be loaded in by Flask
-            // TODO: if karaoke load in accompaniament instead
-            // Would require changing download codec to .wav for consistency between modes
-            $("#audio").attr("src", "/music/song.mp3")
-            processAlignment(alignmentBody);
+            $.getJSON(`${directory}/alignment`, processAlignment);
         })
         .catch(error => {
             console.error('There has been a problem with your fetch operation:', error);

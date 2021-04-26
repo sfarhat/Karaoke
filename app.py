@@ -1,116 +1,137 @@
 import requests
 import bs4
-from flask import Flask, render_template, request, send_file 
+from flask import Flask, render_template, request, send_file, send_from_directory
 import youtube_dl
 from spleeter.separator import Separator
 import os
-import shutil
+import json
 
 app = Flask(__name__)
 
-@app.route("/lyrics")
-def lyrics():
+@app.route('/alignment', methods=['POST'])
+def main():
 
-    print("BEGINNING LYRIC RETRIEVAL...")
-    
-    song_name, artist_name = request.args.get("song-name"), request.args.get("artist-name")
+    """
+    This function will take the song/artist name and obtain all the necessary files for future alignment, and then align them
+    It saves the files organized by the following directory structure:
 
-    # Extracting lyrics from Google
-    payload = {"q": f"{song_name} {artist_name} lyrics"}
-    url = "https://google.com/search"
+    - <title from Youtube video that song is downloaded from>
+        - lyrics.txt
+        - song.wav
+        - song
+            - vocals.wav
+            - accompaniment.wav
+        - align.json
+
+    It will return the name of the working directory that contains all relevant files for the request 
+    """
 
     try:
-        request_result = requests.get(url, params=payload)
-        soup = bs4.BeautifulSoup(request_result.text, "html.parser")
+        request_body = request.json
+        song_name, artist_name = request_body['song-name'], request_body['artist-name']
 
-        lyrics = soup.find_all(class_="hwc")[0].text
-    except:
-        cleanup_from_fail()
-        return 'fail', 500
+        # 1. Pull audio from Youtube
+        audio_file_name = 'song'
+        audio_codec = 'wav'
 
-    # Saves lyrics to 'lyrics.txt'
-    lyrics_file_name = 'lyrics.txt'
-    with open(lyrics_file_name, "w") as f:
-        f.write(lyrics)
+        working_dir = get_audio(song_name, artist_name, audio_file_name, audio_codec)
+        working_dir_path = os.path.join(os.getcwd(), working_dir)
 
-    print("LYRIC RETRIEVAL COMPLETE")
+        audio_path = os.path.join(working_dir_path, f"{audio_file_name}.{audio_codec}")
+        if not os.path.exists(audio_path): 
+            raise Exception("The audio failed to download for an unknown reason.")
 
-    # Returns success with code 204 NO_CONTENT, empty response makes chrome think it failed
-    return 'ok'
+        # 2. Pull lyrics from Google search
+        lyrics_file_name = 'lyrics.txt'
+        lyrics_path = os.path.join(working_dir_path, lyrics_file_name)
 
-@app.route("/audio")
-def audio():
+        # Path will exist is we have cached work from a previous request
+        if not os.path.exists(lyrics_path):
+            get_lyrics(song_name, artist_name, lyrics_path)
 
-    print("BEGINNING AUDIO RETRIEVAL...")
+        # 3. Separate audio into vocals for alignment and accompaniment for audio player
+        vocals_path = os.path.join(working_dir_path, audio_file_name, 'vocals.wav')
+        accompaniment_path = os.path.join(working_dir_path, audio_file_name, 'accompaniment.wav')
 
-    song_name, artist_name = request.args.get("song-name"), request.args.get("artist-name")
+        if not os.path.exists(vocals_path):
+            source_separator(audio_path, working_dir_path)
+
+        # 4. Get alignment
+        alignment_file_name = 'align.json'
+        alignment_path = os.path.join(working_dir_path, alignment_file_name)
+        
+        if not os.path.exists(alignment_path):
+            get_alignment(alignment_path, lyrics_path, vocals_path)
+
+    except Exception as e:
+        return str(e), 500
+
+    return working_dir    
+
+def get_audio(song_name, artist_name, audio_file_name, audio_codec):
 
     # Extracting audio from Youtube
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
+            'preferredcodec': audio_codec,
             'preferredquality': '192',
         }],
         'cachedir': False
     }
 
-    try:
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            search_query = f"{song_name} {artist_name} audio" 
-            video = ydl.extract_info(f"ytsearch:{search_query}", download=True)['entries'][0]
-            # video_url = video['webpage_url']
-            # ydl.download([video_url])
-            audio_file_name = f"{video['title']}-{video['id']}.{ydl_opts['postprocessors'][0]['preferredcodec']}"
-    except:
-        cleanup_from_fail()
-        return 'fail', 500
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        search_query = f"{song_name} {artist_name} audio" 
+        video = ydl.extract_info(f"ytsearch:{search_query}", download=True)['entries'][0]
+        # video_url = video['webpage_url']
+        # ydl.download([video_url])
+        downloaded_file_name = f"{video['title']}-{video['id']}.{audio_codec}"
 
-    # Save downloaded song to 'song.mp3' (assumes file downloaded is .mp3 codec which is specified in ydl_opts)
-    os.rename(os.path.join(os.getcwd(), audio_file_name), 
-                os.path.join(os.getcwd(), f"song.{ydl_opts['postprocessors'][0]['preferredcodec']}"))
+    # Make working dir with name video['title'] for all work for this request to be done in
+    working_dir = video['title']
+    working_dir_path = os.path.join(os.getcwd(), working_dir)
+
+    os.makedirs(working_dir_path, exist_ok=True)
+
+    os.rename(os.path.join(os.getcwd(), downloaded_file_name), 
+                os.path.join(working_dir_path, f"{audio_file_name}.{audio_codec}"))
+
+    return working_dir
             
-    print("AUDIO RETRIEVAL COMPLETE")
+def get_lyrics(song_name, artist_name, lyrics_path):
 
-    return 'ok'
+    # Extracting lyrics from Google
+    payload = {"q": f"{song_name} {artist_name} lyrics"}
+    url = "https://google.com/search"
 
-@app.route("/source-separator")
-def source_separator():
+    request_result = requests.get(url, params=payload)
+    soup = bs4.BeautifulSoup(request_result.text, "html.parser")
 
-    # Must be called after /audio since it expects song.mp3 to exist
-    # This creates 2 files: vocals/accompaniment.wav in folder named audio_file_name
+    # This assert will fail when Google throws a Captcha
+    assert len(soup.find_all(class_='hwc')) > 0, 'Google thinks you are a bot. Please try again after a few minutes'
+
+    lyrics = soup.find_all(class_="hwc")[0].text
+
+    with open(lyrics_path, "w") as f:
+        f.write(lyrics)
+
+def source_separator(audio_path, working_dir_path):
+
+    # This creates 2 files: vocals/accompaniment.wav in folder named <song-name> (which we have set to just be 'song') 
+    # Should be done outside working_dir because pretrained_models should only be downloaded once for all requests
     # TODO: consider using Docker container for this as well, can be called via Docker API
-    print("SEPARATING AUDIO...")
 
-    cwd = os.getcwd()
-    audio_path = os.path.join(cwd, 'song.mp3')
-    
     separator = Separator('spleeter:2stems')
-    separator.separate_to_file(audio_path, cwd)
+    separator.separate_to_file(audio_path, working_dir_path)
 
-    print("AUDIO SEPARATION COMPLETE")
-
-    return 'ok'
-
-@app.route("/alignment")
-def alignment():
-
-    # Must be fetched after /lyrics, /audio, and /source-separate since they put files where they should be
-    print("GETTING ALIGNMENT...")
-
-    cwd = os.getcwd()
-
-    lyrics_path = os.path.join(cwd, 'lyrics.txt')
-
-    # This naming convention is predetermined by Spleeter (./song name/vocals.wav)
-    separated_audio_path = os.path.join(os.getcwd(), 'song', 'vocals.wav')
+def get_alignment(alignment_path, lyrics_path, vocals_path):
 
     # Passing lyrics and audio into forced aligner
     params = {'async': 'false'}
 
     files = {
-        'audio': open(separated_audio_path, 'rb'),
+        'audio': open(vocals_path, 'rb'),
         'transcript': open(lyrics_path, 'rb')
     }
 
@@ -120,52 +141,20 @@ def alignment():
     # Docker sets up a local network with each container reachable by http://{service-name}:{container port}
     try:
         alignment_json = requests.post('http://aligner:8765/transcriptions', params=params, files=files).json()
-    except:
-        cleanup_from_fail()
-        return 'fail', 500
+    except requests.exceptions.RequestException as e:
+        raise Exception("Could not connect to aligner module. Is the appropriate Docker container running?")
 
-    print("ALIGNMENT RETRIEVED")
+    with open(alignment_path, "w") as f:
+        json.dump(alignment_json, f)
 
-    # We have created lyrics.txt, song.mp3, and separated .wav files in the song directory
-    # Only song.mp3 is necessary for the front-end, so we can delete the rest before returning
-    os.remove(os.path.join(os.getcwd(), 'lyrics.txt'))
-    # TODO: use accompaniament.wav for karaoke mode
-    shutil.rmtree(os.path.join(os.getcwd(), 'song'))
+@app.route('/<path:dir_name>/audio')
+def get_audio_file(dir_name):
+    return send_from_directory(dir_name, 'song.wav')
 
-    return alignment_json
-
-@app.route("/main", methods=["GET", "POST"])
-def main():
-
-    # This is useless now...
-    if request.method == "POST":
-        result = request.json
-        song_name, artist_name = result["song-name"], result["artist-name"]
-
-    if request.method == "GET":
-        song_name, artist_name = request.args.get("song-name"), request.args.get("artist-name")
-
-def cleanup_from_fail():
-
-    # These are listed in creation order, so it will fail only after deleting everything that has already been created
-    try:
-        os.remove(os.path.join(os.getcwd(), 'lyrics.txt'))
-        shutil.rmtree(os.path.join(os.getcwd(), 'song'))
-        os.remove(os.path.join(os.getcwd(), 'song.mp3'))
-    except OSError:
-        pass
-
-@app.route('/music/<path:filename>')
-def download_file(filename):
-    return send_file(filename)
+@app.route('/<path:dir_name>/alignment')
+def get_alignment_file(dir_name):
+    return send_from_directory(dir_name, 'align.json')
 
 @app.route("/")
 def index():
-
-    # on page reload, song.mp3 may be left over from previous run
-    try:
-        os.remove(os.path.join(os.getcwd(), 'song.mp3'))
-    except OSError:
-        pass
-
     return render_template("index.html")
