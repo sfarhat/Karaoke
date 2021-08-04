@@ -104,6 +104,7 @@
 
 #add-to-queue {
   margin: 5rem auto;
+  margin-bottom: 1rem;
   width: 15rem;
   text-align: center;
   border: 0.2rem solid green;
@@ -135,6 +136,24 @@
   text-align: center;
 }
 
+#song-loading {
+  display: none;
+  text-align: center;
+}
+
+#song-loading img {
+  width: 8rem;
+}
+
+#song-loaded {
+  display: none;
+  text-align: center;
+}
+
+#song-loaded img {
+  width: 8rem;
+}
+
 #player {
   margin: 10rem auto;
   text-align: center;
@@ -164,6 +183,8 @@
     font-family: Programme, Arial, sans-serif;
     font-weight: 100;
     text-align: center;
+    overflow: auto;
+    height: 20rem;
 }
 
 

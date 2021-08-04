@@ -181,6 +181,7 @@ $(document).ready(() => {
                 // If first word in line, will add whole line, else should do nothing
                 if (highlightedWord.break) {
                     // reached new line
+                    // TODO: for now, I'm leaving this alone as I just want all lyrics to show with highliights, nothing fancy
                     if(lineByLine) {
                         console.log("Showing line beginning with word: " + highlightedWord.word);
                         showLine(words, highlightIndex);
@@ -254,7 +255,10 @@ $(document).ready(() => {
             headers: {'Content-Type': 'application/json'}
         }
 
-        updateProgress(0, "Request received, fetching lyrics...");
+        // updateProgress(0, "Request received, fetching lyrics...");
+        // $('#progress').html('<img src="./img/loading.gif"/>')
+        $('#song-loaded').hide();
+        $('#song-loading').show();
 
         // Gives song/artist name, receives name of directory in internal filesystem where relevant files are
         fetch('/create-alignment', fetchData)
@@ -266,6 +270,11 @@ $(document).ready(() => {
         })
         .then(directory => {
             console.log(directory);
+            // $('#progress').html('<img src="./img/check.png"/>')
+            $('#song-loading').hide();
+            $('#song-loaded').show();
+            // updateProgress(100, "Done!");
+            $('#currently-playing').text(directory);
             if (lineByLine) {
                 $("#audio").attr('src', `/audio/${directory}`);
             } else {
