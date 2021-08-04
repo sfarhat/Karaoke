@@ -5,6 +5,9 @@ Karaoke 🎤
 
 A web app that, given a song name and its artist, will display the full karaoke experience to sing along too. Complete with the song, lyrics, and a synchronized lyric guide.
 
+
+![Showcase of Website](./showcase.gif)
+
 Design
 ----
 
@@ -62,9 +65,11 @@ Installation
 
         docker compose up
         
-3. The app is now running on [`localhost:5000`](http://localhost:5000)
+5. The app is now running on [`localhost:5000`](http://localhost:5000)
+
+Alternatively, you can find the Docker image on [Dockerhub](https://hub.docker.com/r/seanfarhat/karaoke).
 
 TODO
 -----
 
-Create a better Forced Aligner
+Improve the UI
