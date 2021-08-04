@@ -53,7 +53,7 @@ Deployment
 To keep up to date with modern app/service development practices, I decided to container-ize this with Docker. The details of the built image can be found in [`Dockerfile`](https://github.com/sfarhat/Karaoke/blob/main/Dockerfile). By itself, the container will do everything except forced alignment of lyrics, which is done by another Docker container. So to make the overall architecture work, we need to Compose these 2 Docker images into one project. The implementation of this can be found in [`docker-compose.yml`](https://github.com/sfarhat/Karaoke/blob/main/docker-compose.yml).
 
 ### CI Pipeline
-- Every push to the `main` branch triggers an image build on DockerHub
+- Every push to the `main` branch triggers an image build via Github Actions
 
 Installation
 ----
